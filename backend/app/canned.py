@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from .llm import LLMError, render_prompt
 from .llm_schemas import (
     AssessmentOutput, CriterionScore, DeckExtraction, DiligenceQuestionOut, ExtractedClaim, ExtractedFounder,
-    NewEvidence, NoteAnalysis, QuestionSet,
+    NewEvidence, NoteAnalysis, QuestionSet, ResearchFactOut, ResearchReport,
 )
 from .thesis import CRITERION_KEYS
 
@@ -37,7 +37,25 @@ class CannedLLM:
             return self._questions()  # type: ignore[return-value]
         if schema is NoteAnalysis:
             return self._note(variables)  # type: ignore[return-value]
+        if schema is ResearchReport:
+            return self._research(variables)  # type: ignore[return-value]
         raise LLMError(f"canned LLM has no output for {schema.__name__}")
+
+    def _research(self, variables: dict[str, str]) -> ResearchReport:
+        name = variables.get("company_name", "Company")
+        return ResearchReport(
+            summary=f"[canned] Placeholder research for {name}. Set BRAVE_API_KEY and OPENAI_API_KEY for real research.",
+            facts=[
+                ResearchFactOut(category="COMPANY", finding=f"[canned] {name} has a public company page.",
+                                source_url="https://example.com/company", source_title="[canned] Example company page",
+                                publication_date=None, confidence="LOW", claim_id=None, relation=None),
+                ResearchFactOut(category="TRACTION", finding=f"[canned] A press snippet mentions {name} pilots.",
+                                source_url="https://example.com/news/pilots", source_title="[canned] Example press item",
+                                publication_date="2026-09-01", confidence="LOW", claim_id=None, relation=None),
+            ],
+            unknowns=["[canned] Everything. This is placeholder output."],
+            entity_note=None,
+        )
 
     def _extraction(self, variables: dict[str, str]) -> DeckExtraction:
         hint = variables.get("company_hint", "Company")

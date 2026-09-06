@@ -61,8 +61,15 @@ All settings are environment variables, read from `backend/.env` locally and fro
 | `OPENAI_API_KEY`, `OPENAI_MODEL` | One LLM provider. The model must support structured outputs. |
 | `DATABASE_URL` | SQLite locally (`sqlite:///./data/app.db`). Replit injects a Postgres URL for its built-in database. |
 | `AGENT_PROVIDER` | `mock` (default) or `openclaw`. |
-| `OPENCLAW_GATEWAY_URL`, `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_AGENT_ID` | Where and how to reach the OpenClaw gateway. |
+| `OPENCLAW_GATEWAY_URL`, `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_AGENT_ID` | Where and how to reach the OpenClaw gateway. Agent id `default` matches the gateway's `openclaw/default` model name. |
+| `BRAVE_API_KEY` | Enables the Public research panel. The app calls Brave directly. |
 | `LLM_PROVIDER` | `openai` (default) or `canned` for key-less UI work. |
+
+## Public research (Brave, not OpenClaw)
+
+The Decision Room has a Public research panel. It runs two or three Brave web searches built from the company name, website domain, and your brief, deduplicates the results, and makes one OpenAI call that may only cite URLs from those results. Facts citing anything else are dropped and counted. Kept facts are stored as `WEB` evidence rows, linked to a deck claim when the model names one, and if a thesis assessment already exists the company is rescored and the same Before / New evidence / After diff is shown.
+
+This deliberately does not go through OpenClaw. An OpenClaw run spends the box's own model on an agent loop for every search; Brave plus one structured call is a few cents and deterministic. OpenClaw is reserved for the single Run Agent Check that the assignment requires.
 
 ## OpenClaw
 
@@ -87,7 +94,7 @@ The agent needs web search to do real research. OpenClaw's managed `web_search` 
 
 The gateway binds to loopback by default and refuses an unauthenticated non-loopback bind. To reach it from this app:
 
-- from a laptop: an SSH tunnel, `ssh -N -L 18789:127.0.0.1:18789 user@box`, then `OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789`;
+- from a laptop: an SSH tunnel, `ssh -N -L 18789:127.0.0.1:18789 user@gateway-box`, then `OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789`;
 - from Replit: expose the gateway through Tailscale Funnel or a TLS reverse proxy with the bearer token kept on, and set `OPENCLAW_GATEWAY_URL` to that public HTTPS address.
 
 The app sends the agent the company name, website, current concern, open evidence gap, last review date, and the investment question (see `backend/app/prompts/agent_task.md`). The reply is parsed leniently (fenced JSON, bare JSON, or JSON inside prose) and stored as a `monitoring_event` with its source URL. The finding becomes an `AGENT` evidence row, the thesis is rescored, and the Decision Room shows before, new evidence, after. The human decision is never modified.

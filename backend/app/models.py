@@ -49,6 +49,7 @@ class Company(Base):
     decisions: Mapped[list[Decision]] = relationship(back_populates="company", cascade="all, delete-orphan")
     founder_notes: Mapped[list[FounderNote]] = relationship(back_populates="company", cascade="all, delete-orphan")
     monitoring_events: Mapped[list[MonitoringEvent]] = relationship(back_populates="company", cascade="all, delete-orphan")
+    research_runs: Mapped[list[ResearchRun]] = relationship(back_populates="company", cascade="all, delete-orphan")
 
 
 class Document(Base):
@@ -174,3 +175,21 @@ class MonitoringEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     company: Mapped[Company] = relationship(back_populates="monitoring_events")
+
+
+class ResearchRun(Base):
+    """Brave search + one OpenAI call. Raw results kept so every fact can be checked against its source."""
+
+    __tablename__ = "research_runs"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    company_id: Mapped[str] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), index=True)
+    brief: Mapped[str] = mapped_column(Text)
+    queries_json: Mapped[list[str]] = mapped_column(JSON)
+    results_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON)
+    report_json: Mapped[dict[str, Any]] = mapped_column(JSON)
+    facts_kept: Mapped[int] = mapped_column(Integer, default=0)
+    facts_dropped: Mapped[int] = mapped_column(Integer, default=0)
+    search_provider: Mapped[str] = mapped_column(String(30), default="brave")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    company: Mapped[Company] = relationship(back_populates="research_runs")

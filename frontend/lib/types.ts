@@ -1,6 +1,6 @@
 export type Verdict = "PASS" | "WATCH" | "DILIGENCE";
 export type Relation = "SUPPORTS" | "CONTRADICTS" | "QUALIFIES";
-export type SourceType = "DECK" | "FOUNDER_NOTE" | "AGENT";
+export type SourceType = "DECK" | "FOUNDER_NOTE" | "AGENT" | "WEB";
 
 export interface Company {
   id: string;
@@ -144,6 +144,35 @@ export interface Analysis {
   decision: Decision | null;
   thesis: Thesis;
   monitoring_events: MonitoringEvent[];
+  research: Research | null;
+}
+
+export interface ResearchFact {
+  category: string;
+  finding: string;
+  source_url: string;
+  source_title: string;
+  publication_date: string | null;
+  confidence: "LOW" | "MEDIUM" | "HIGH";
+  claim_id: string | null;
+  relation: Relation | null;
+}
+
+export interface Research {
+  id: string;
+  brief: string;
+  queries: string[];
+  result_count: number;
+  domain_count: number;
+  facts_kept: number;
+  facts_dropped: number;
+  search_provider: string;
+  summary: string;
+  entity_note: string | null;
+  facts: ResearchFact[];
+  unknowns: string[];
+  created_at: string;
+  reassessment: Reassessment | null;
 }
 
 export interface CriterionDelta {
@@ -155,7 +184,7 @@ export interface CriterionDelta {
 }
 
 export interface Reassessment {
-  trigger: "AGENT" | "FOUNDER_NOTE";
+  trigger: "AGENT" | "FOUNDER_NOTE" | "RESEARCH";
   event: MonitoringEvent | null;
   note_summary: string | null;
   new_evidence: Evidence[];
@@ -171,7 +200,7 @@ export interface Reassessment {
 export interface ChangeEntry {
   id: string;
   ts: string;
-  kind: "DECK_UPLOADED" | "ASSESSMENT" | "DECISION" | "AGENT_EVENT" | "FOUNDER_NOTE" | "QUESTIONS";
+  kind: "DECK_UPLOADED" | "ASSESSMENT" | "DECISION" | "AGENT_EVENT" | "FOUNDER_NOTE" | "QUESTIONS" | "RESEARCH";
   title: string;
   detail: string;
   source_url: string | null;

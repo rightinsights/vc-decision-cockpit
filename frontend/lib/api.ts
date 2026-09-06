@@ -1,5 +1,5 @@
 import type {
-  Analysis, ChangeEntry, Company, Decision, DocumentInfo, PipelineRow, Question, Reassessment, Thesis, Verdict,
+  Analysis, ChangeEntry, Company, Decision, DocumentInfo, PipelineRow, Question, Reassessment, Research, Thesis, Verdict,
 } from "./types";
 
 const BASE = "/api";
@@ -61,4 +61,6 @@ export const api = {
     request<{ id: string }>(`/companies/${id}/founder-notes`, json({ raw_notes })),
   reassess: (id: string, note_id: string) => request<Reassessment>(`/companies/${id}/reassess`, json({ note_id })),
   getChanges: (id: string) => request<ChangeEntry[]>(`/companies/${id}/changes`),
+  research: (id: string, brief: string | undefined) => request<Research>(`/companies/${id}/research`, json({ brief: brief ?? null })),
+  getResearch: (id: string) => request<Research>(`/companies/${id}/research`),
 };

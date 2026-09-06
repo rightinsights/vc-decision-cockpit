@@ -216,7 +216,11 @@ def build_analysis(db: Session, company: Company) -> AnalysisOut:
     document = latest_document(db, company.id)
     decision = latest_decision(db, company.id)
     criteria_meta: dict[str, Any] = thesis.criteria_json or {}
+    from .research import latest_research, research_view  # local import: research imports this module
+
+    research_run = latest_research(db, company.id)
     return AnalysisOut(
+        research=research_view(research_run) if research_run else None,
         company=CompanyOut.model_validate(company),
         snapshot=company.snapshot_json,
         document=DocumentOut.model_validate(document) if document else None,

@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import agent, analysis, changes, companies, decisions, notes, thesis
+from .api import agent, analysis, changes, companies, decisions, notes, research, thesis
 from .config import get_settings
 from .db import SessionLocal, init_db
 from .seed import seed_thesis
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(agent.router)
     app.include_router(changes.router)
     app.include_router(notes.router)
+    app.include_router(research.router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

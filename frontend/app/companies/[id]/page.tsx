@@ -10,18 +10,20 @@ import { DecisionPanel } from "@/components/decision-panel";
 import { FounderUpdate } from "@/components/founder-update";
 import { ErrorNotice, SectionTitle } from "@/components/notice";
 import { QuestionList } from "@/components/questions";
+import { ResearchPanel } from "@/components/research-panel";
 import { SnapshotRail } from "@/components/snapshot";
 import { Score, VerdictMark } from "@/components/status-mark";
 import { ThesisFit } from "@/components/thesis-fit";
 import { api, ApiError } from "@/lib/api";
 import { domainOf } from "@/lib/format";
-import type { Analysis, Decision, Reassessment, Verdict } from "@/lib/types";
+import type { Analysis, Decision, Reassessment, Research, Verdict } from "@/lib/types";
 
 const STEP_ANALYZE = "Reading the deck, extracting claims, and scoring against the thesis. Usually 30 to 90 seconds.";
 const STEP_QUESTIONS = "Writing the five questions that could change the decision.";
 const STEP_UPLOAD = "Uploading and reading pages.";
 const STEP_AGENT = "The agent is researching the company. This can take a few minutes.";
 const STEP_NOTES = "Extracting evidence from the update and rescoring.";
+const STEP_RESEARCH = "Searching the web with Brave and reading the results.";
 
 export default function DecisionRoomPage() {
   const { id } = useParams<{ id: string }>();
@@ -68,6 +70,9 @@ export default function DecisionRoomPage() {
   const runAgent = (question: string | undefined): Promise<Reassessment | null> =>
     run(STEP_AGENT, () => api.agentCheck(id, question));
 
+  const runResearch = (brief: string | undefined): Promise<Research | null> =>
+    run(STEP_RESEARCH, () => api.research(id, brief));
+
   const analyzeNotes = (notes: string): Promise<Reassessment | null> =>
     run(STEP_NOTES, async () => {
       const note = await api.founderNote(id, notes);
@@ -90,7 +95,7 @@ export default function DecisionRoomPage() {
     );
   }
 
-  const { company, assessment, claims, questions, decision, snapshot, document, thesis, monitoring_events } = analysis;
+  const { company, assessment, claims, questions, decision, snapshot, document, thesis, monitoring_events, research } = analysis;
 
   return (
     <div className="space-y-6">
@@ -150,6 +155,11 @@ export default function DecisionRoomPage() {
         </aside>
 
         <div className="min-w-0 space-y-10">
+          <section>
+            <SectionTitle aside="Brave search plus one model call, facts cite returned URLs only">Public research</SectionTitle>
+            <ResearchPanel research={research} busy={busy !== null} onRun={runResearch} />
+          </section>
+
           <section>
             <SectionTitle aside={claims.length ? `${claims.length} claims from the deck` : undefined}>Claims and evidence</SectionTitle>
             <ClaimsLedger claims={claims} />

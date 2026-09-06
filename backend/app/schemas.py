@@ -174,6 +174,7 @@ class AnalysisOut(BaseModel):
     decision: DecisionOut | None
     thesis: ThesisOut
     monitoring_events: list[MonitoringEventOut]
+    research: "ResearchOut | None" = None
 
 
 # ---- Agent check / reassessment ----
@@ -189,8 +190,8 @@ class RecommendationChange(BaseModel):
 
 
 class ReassessmentOut(BaseModel):
-    """Before -> new evidence -> after. Shared by agent check and founder-note reassessment."""
-    trigger: Literal["AGENT", "FOUNDER_NOTE"]
+    """Before -> new evidence -> after. Shared by agent check, founder-note, and research reassessment."""
+    trigger: Literal["AGENT", "FOUNDER_NOTE", "RESEARCH"]
     event: MonitoringEventOut | None
     note_summary: str | None
     new_evidence: list[EvidenceOut]
@@ -213,11 +214,43 @@ class FounderNoteOut(OrmModel):
     created_at: UtcDateTime
 
 
+class ResearchRequest(BaseModel):
+    brief: str | None = None
+
+
+class ResearchFactView(BaseModel):
+    category: str
+    finding: str
+    source_url: str
+    source_title: str
+    publication_date: str | None = None
+    confidence: str
+    claim_id: str | None = None
+    relation: str | None = None
+
+
+class ResearchOut(BaseModel):
+    id: str
+    brief: str
+    queries: list[str]
+    result_count: int
+    domain_count: int
+    facts_kept: int
+    facts_dropped: int
+    search_provider: str
+    summary: str
+    entity_note: str | None
+    facts: list[ResearchFactView]
+    unknowns: list[str]
+    created_at: UtcDateTime
+    reassessment: ReassessmentOut | None = None
+
+
 class ChangeEntry(BaseModel):
     id: str
     ts: UtcDateTime
     kind: Literal[
-        "DECK_UPLOADED", "ASSESSMENT", "DECISION", "AGENT_EVENT", "FOUNDER_NOTE", "QUESTIONS",
+        "DECK_UPLOADED", "ASSESSMENT", "DECISION", "AGENT_EVENT", "FOUNDER_NOTE", "QUESTIONS", "RESEARCH",
     ]
     title: str
     detail: str

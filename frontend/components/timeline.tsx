@@ -16,8 +16,9 @@ function Marker({ kind }: { kind: ChangeEntry["kind"] }) {
     kind === "DECISION" ? "var(--foreground)" :
     kind === "AGENT_EVENT" ? "var(--diligence)" :
     kind === "FOUNDER_NOTE" ? "var(--watch)" :
+    kind === "RESEARCH" ? "var(--qualifies)" :
     "var(--muted-foreground)";
-  const filled = kind === "DECISION" || kind === "AGENT_EVENT" || kind === "FOUNDER_NOTE";
+  const filled = kind === "DECISION" || kind === "AGENT_EVENT" || kind === "FOUNDER_NOTE" || kind === "RESEARCH";
   return (
     <span
       className="mt-1.5 block size-2.5 rounded-full"

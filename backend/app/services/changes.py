@@ -7,7 +7,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import Assessment, Company, Decision, DiligenceQuestion, Document, FounderNote, MonitoringEvent
+from ..models import Assessment, Company, Decision, DiligenceQuestion, Document, FounderNote, MonitoringEvent, ResearchRun
 from ..schemas import ChangeEntry
 from ..scoring import diff_scores
 
@@ -15,6 +15,7 @@ TRIGGER_TITLE = {
     "DECK": "Initial deck analysis",
     "AGENT": "AI view updated after agent finding",
     "FOUNDER_NOTE": "AI view updated after founder update",
+    "RESEARCH": "AI view updated after public research",
 }
 
 
@@ -36,8 +37,16 @@ def build_timeline(db: Session, company: Company) -> list[ChangeEntry]:
     events = db.execute(select(MonitoringEvent).where(MonitoringEvent.company_id == cid).order_by(MonitoringEvent.created_at)).scalars().all()
     notes = db.execute(select(FounderNote).where(FounderNote.company_id == cid).order_by(FounderNote.created_at)).scalars().all()
     questions = db.execute(select(DiligenceQuestion).where(DiligenceQuestion.company_id == cid).order_by(DiligenceQuestion.created_at)).scalars().all()
+    research_runs = db.execute(select(ResearchRun).where(ResearchRun.company_id == cid).order_by(ResearchRun.created_at)).scalars().all()
 
     entries: list[ChangeEntry] = []
+    for r in research_runs:
+        summary = (r.report_json or {}).get("summary", "")
+        entries.append(ChangeEntry(
+            id=r.id, ts=r.created_at, kind="RESEARCH",
+            title=f"Public research: {r.facts_kept} sourced fact{'s' if r.facts_kept != 1 else ''}",
+            detail=summary or f"{r.result_count if hasattr(r, 'result_count') else len(r.results_json or [])} search results, nothing usable.",
+        ))
     for doc in documents:
         entries.append(ChangeEntry(
             id=doc.id, ts=doc.created_at, kind="DECK_UPLOADED", title="Deck uploaded",

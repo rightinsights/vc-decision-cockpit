@@ -46,6 +46,7 @@ class OpenClawMonitoringAgent:
         system, user = build_task(request)
         body = {
             "model": f"openclaw/{self.agent_id}",
+            "user": f"vc-cockpit:{request.company_name}",  # session hint; verified working against the gateway
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},

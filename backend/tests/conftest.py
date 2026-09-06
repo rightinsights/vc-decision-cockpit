@@ -9,6 +9,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{(_TMP / 'test.db').as_posix()}"
 os.environ["UPLOAD_DIR"] = str(_TMP / "uploads")
 os.environ["OPENAI_API_KEY"] = "test-key-not-used"
 os.environ["AGENT_PROVIDER"] = "mock"
+os.environ.pop("BRAVE_API_KEY", None)
 
 import pymupdf  # noqa: E402
 import pytest  # noqa: E402

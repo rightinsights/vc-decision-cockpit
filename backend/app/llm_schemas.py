@@ -124,6 +124,31 @@ class NoteAnalysis(StrictModel):
     summary: str
 
 
+# ---- Public research from Brave results ----
+
+FactCategory = Literal[
+    "COMPANY", "PRODUCT", "CUSTOMERS", "TRACTION", "FUNDING", "TEAM", "COMPETITORS", "RISKS", "OTHER",
+]
+
+
+class ResearchFactOut(StrictModel):
+    category: FactCategory
+    finding: str
+    source_url: str  # must be one of the provided result URLs; enforced in code
+    source_title: str
+    publication_date: str | None
+    confidence: Strength
+    claim_id: str | None
+    relation: Relation | None
+
+
+class ResearchReport(StrictModel):
+    summary: str
+    facts: list[ResearchFactOut]
+    unknowns: list[str]
+    entity_note: str | None  # e.g. "results about a different company named X were ignored"
+
+
 # ---- Agent finding (BUILD_SPEC §10) ----
 
 class AgentFinding(StrictModel):

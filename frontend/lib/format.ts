@@ -38,6 +38,7 @@ export const SOURCE_LABEL: Record<string, string> = {
   DECK: "Deck",
   FOUNDER_NOTE: "Founder note",
   AGENT: "Agent",
+  WEB: "Web",
 };
 
 export function domainOf(url: string | null): string {

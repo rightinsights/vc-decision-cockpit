@@ -50,6 +50,10 @@ def explain(
             parts.append(f"New evidence from {_host(event.source_url)}: {event.summary}")
             if event.claim_or_gap_affected:
                 parts.append(f"It bears on: {event.claim_or_gap_affected}.")
+    elif trigger == "RESEARCH":
+        parts.append(f"Public research added {new_evidence_count} sourced fact{'s' if new_evidence_count != 1 else ''} as evidence.")
+        if note_summary:
+            parts.append(note_summary)
     else:
         parts.append(f"Founder update added {new_evidence_count} piece{'s' if new_evidence_count != 1 else ''} of evidence.")
         if note_summary:

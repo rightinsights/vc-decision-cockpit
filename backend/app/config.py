@@ -29,8 +29,12 @@ class Settings(BaseSettings):
     agent_provider: Literal["mock", "openclaw"] = "mock"
     openclaw_gateway_url: str | None = None
     openclaw_gateway_token: str | None = None
-    openclaw_agent_id: str = "main"
+    openclaw_agent_id: str = "default"
     openclaw_timeout_seconds: int = 300
+
+    brave_api_key: str | None = None
+    brave_result_count: int = 8  # per query; 2-3 queries per research run
+    brave_timeout_seconds: int = 20
 
     cors_origins: str = "http://localhost:3000"
 
