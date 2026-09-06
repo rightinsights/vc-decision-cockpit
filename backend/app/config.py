@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     max_upload_mb: int = 25
     max_pages: int = 200
 
+    llm_provider: Literal["openai", "canned"] = "openai"  # canned = placeholder outputs for UI work, no key
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1"
     llm_temperature: float | None = 0.0
@@ -38,12 +39,16 @@ class Settings(BaseSettings):
         return path if path.is_absolute() else (BACKEND_DIR / path).resolve()
 
     def resolved_database_url(self) -> str:
-        """Make a relative sqlite path relative to backend/ regardless of cwd."""
+        """Relative sqlite paths resolve against backend/; plain postgres URLs get the psycopg driver."""
+        url = self.database_url
         prefix = "sqlite:///./"
-        if self.database_url.startswith(prefix):
-            rel = self.database_url[len(prefix):]
+        if url.startswith(prefix):
+            rel = url[len(prefix):]
             return f"sqlite:///{(BACKEND_DIR / rel).resolve().as_posix()}"
-        return self.database_url
+        for plain in ("postgres://", "postgresql://"):
+            if url.startswith(plain):  # Replit / Supabase hand out driverless URLs
+                return "postgresql+psycopg://" + url[len(plain):]
+        return url
 
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { AgentCheck } from "@/components/agent-check";
 import { ClaimsLedger } from "@/components/claims-ledger";
 import { DeckPanel } from "@/components/deck-panel";
 import { DecisionPanel } from "@/components/decision-panel";
+import { FounderUpdate } from "@/components/founder-update";
 import { ErrorNotice, SectionTitle } from "@/components/notice";
 import { QuestionList } from "@/components/questions";
 import { SnapshotRail } from "@/components/snapshot";
@@ -13,11 +15,13 @@ import { Score, VerdictMark } from "@/components/status-mark";
 import { ThesisFit } from "@/components/thesis-fit";
 import { api, ApiError } from "@/lib/api";
 import { domainOf } from "@/lib/format";
-import type { Analysis, Decision, Verdict } from "@/lib/types";
+import type { Analysis, Decision, Reassessment, Verdict } from "@/lib/types";
 
 const STEP_ANALYZE = "Reading the deck, extracting claims, and scoring against the thesis. Usually 30 to 90 seconds.";
 const STEP_QUESTIONS = "Writing the five questions that could change the decision.";
 const STEP_UPLOAD = "Uploading and reading pages.";
+const STEP_AGENT = "The agent is researching the company. This can take a few minutes.";
+const STEP_NOTES = "Extracting evidence from the update and rescoring.";
 
 export default function DecisionRoomPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,20 +48,31 @@ export default function DecisionRoomPage() {
     };
   }, [fetchAll]);
 
-  async function run(step: string, action: () => Promise<unknown>) {
+  async function run<T>(step: string, action: () => Promise<T>): Promise<T | null> {
     setBusy(step);
     setError(null);
     try {
-      await action();
+      const value = await action();
       const [a, h] = await fetchAll();
       setAnalysis(a);
       setHistory(h);
+      return value;
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong.");
+      return null;
     } finally {
       setBusy(null);
     }
   }
+
+  const runAgent = (question: string | undefined): Promise<Reassessment | null> =>
+    run(STEP_AGENT, () => api.agentCheck(id, question));
+
+  const analyzeNotes = (notes: string): Promise<Reassessment | null> =>
+    run(STEP_NOTES, async () => {
+      const note = await api.founderNote(id, notes);
+      return api.reassess(id, note.id);
+    });
 
   const analyzeThenQuestions = () =>
     run(STEP_ANALYZE, async () => {
@@ -75,7 +90,7 @@ export default function DecisionRoomPage() {
     );
   }
 
-  const { company, assessment, claims, questions, decision, snapshot, document, thesis } = analysis;
+  const { company, assessment, claims, questions, decision, snapshot, document, thesis, monitoring_events } = analysis;
 
   return (
     <div className="space-y-6">
@@ -123,7 +138,7 @@ export default function DecisionRoomPage() {
       />
 
       <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
-        <aside className="space-y-8 lg:sticky lg:top-6 lg:self-start">
+        <aside className="space-y-8">
           <section>
             <h2 className="mb-2 text-sm font-medium">Snapshot</h2>
             <SnapshotRail snapshot={snapshot} />
@@ -144,6 +159,7 @@ export default function DecisionRoomPage() {
             <SectionTitle aside={questions.length ? "Answers that could change the decision" : undefined}>Five diligence questions</SectionTitle>
             <QuestionList
               questions={questions}
+              criteria={thesis.criteria}
               canGenerate={assessment !== null && !busy}
               onGenerate={() => run(STEP_QUESTIONS, () => api.meetingQuestions(id))}
             />
@@ -157,8 +173,20 @@ export default function DecisionRoomPage() {
               history={history}
               recommendation={assessment?.recommendation ?? null}
               disabled={assessment === null || busy !== null}
-              onRecord={(verdict: Verdict, rationale: string) => run("Recording decision.", () => api.createDecision(id, { decision: verdict, rationale }))}
+              onRecord={async (verdict: Verdict, rationale: string) => {
+                await run("Recording decision.", () => api.createDecision(id, { decision: verdict, rationale }));
+              }}
             />
+          </section>
+
+          <section>
+            <SectionTitle aside="One real external research run, returned as evidence">Agent check</SectionTitle>
+            <AgentCheck decision={decision} assessment={assessment} events={monitoring_events} busy={busy !== null} onRun={runAgent} />
+          </section>
+
+          <section>
+            <SectionTitle aside="Optional">Founder update</SectionTitle>
+            <FounderUpdate enabled={assessment !== null} busy={busy !== null} onAnalyze={analyzeNotes} />
           </section>
         </div>
       </div>

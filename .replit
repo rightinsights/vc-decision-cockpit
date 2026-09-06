@@ -1,0 +1,17 @@
+# Replit configuration. Next.js owns the single public port and proxies /api/* to FastAPI.
+modules = ["nodejs-22", "python-3.12"]
+entrypoint = "README.md"
+run = ["bash", "start.sh"]
+
+[deployment]
+# Reserved VM keeps one long-lived process pair and tolerates 60-120 s synchronous LLM calls.
+deploymentTarget = "vm"
+build = ["bash", "build.sh"]
+run = ["bash", "start.sh"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[env]
+BACKEND_URL = "http://127.0.0.1:8000"

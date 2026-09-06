@@ -67,7 +67,7 @@ def build_timeline(db: Session, company: Company) -> list[ChangeEntry]:
 
     for d in decisions:
         entries.append(ChangeEntry(
-            id=d.id, ts=d.created_at, kind="DECISION", title=f"Human decision: {d.decision}", detail=d.rationale,
+            id=d.id, ts=d.created_at, kind="DECISION", title="Human decision recorded", detail=d.rationale,
             recommendation=d.decision,
         ))
 

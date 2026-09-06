@@ -105,4 +105,8 @@ class FakeLLM:
 
 
 def get_llm(settings: Settings = Depends(get_settings)) -> LLMClient:
+    if settings.llm_provider == "canned":
+        from .canned import CannedLLM
+
+        return CannedLLM()  # type: ignore[return-value]
     return LLMClient(settings)

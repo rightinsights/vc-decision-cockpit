@@ -49,6 +49,8 @@ export function domainOf(url: string | null): string {
   }
 }
 
+const CATEGORY_LABEL: Record<string, string> = { roi: "ROI", business_model: "Business model" };
+
 export function titleCase(value: string): string {
-  return value.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+  return CATEGORY_LABEL[value] ?? value.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 }

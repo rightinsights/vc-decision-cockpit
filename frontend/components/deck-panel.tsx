@@ -10,9 +10,9 @@ interface Props {
   document: DocumentInfo | null;
   hasAnalysis: boolean;
   busy: string | null; // label of the step in flight, or null
-  onUpload: (file: File) => Promise<void>;
-  onAnalyze: () => Promise<void>;
-  onQuestions: () => Promise<void>;
+  onUpload: (file: File) => Promise<unknown>;
+  onAnalyze: () => Promise<unknown>;
+  onQuestions: () => Promise<unknown>;
   questionsMissing: boolean;
 }
 

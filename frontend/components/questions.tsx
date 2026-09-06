@@ -1,7 +1,16 @@
-import type { Question } from "@/lib/types";
+import type { Criterion, Question } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 
-export function QuestionList({ questions, canGenerate, onGenerate }: { questions: Question[]; canGenerate: boolean; onGenerate: () => void }) {
+interface Props {
+  questions: Question[];
+  criteria: Criterion[];
+  canGenerate: boolean;
+  onGenerate: () => void;
+}
+
+export function QuestionList({ questions, criteria, canGenerate, onGenerate }: Props) {
+  const labelFor = (basis: string) => criteria.find((c) => c.key === basis)?.label ?? basis;
+
   if (questions.length === 0) {
     return (
       <div className="border border-dashed border-border px-5 py-8 text-center text-sm text-muted-foreground">
@@ -34,7 +43,7 @@ export function QuestionList({ questions, canGenerate, onGenerate }: { questions
                 <p className="mt-0.5 leading-snug">{q.weak_answer}</p>
               </div>
             </div>
-            {q.basis && <p className="mt-2 text-xs text-muted-foreground">Targets: {q.basis}</p>}
+            {q.basis && <p className="mt-2 text-xs text-muted-foreground">Targets: {labelFor(q.basis)}</p>}
           </div>
         </li>
       ))}

@@ -91,7 +91,7 @@ export default function PipelinePage() {
                   </td>
                   <td className="whitespace-nowrap px-3 py-3 align-top text-muted-foreground">{formatDate(row.last_changed)}</td>
                   <td className="px-3 py-3 text-right align-top">
-                    <Link href={`/companies/${row.id}`} className="text-xs font-medium hover:underline">Open decision room</Link>
+                    <Link href={`/companies/${row.id}`} className="whitespace-nowrap text-xs font-medium hover:underline">Open decision room</Link>
                   </td>
                 </tr>
               ))}
