@@ -21,7 +21,6 @@ class Settings(BaseSettings):
     max_upload_mb: int = 25
     max_pages: int = 200
 
-    llm_provider: Literal["openai", "mock"] = "openai"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1"
     llm_temperature: float | None = 0.0

@@ -30,13 +30,15 @@ def compute_overall(scores: Mapping[str, int | None]) -> ScoreResult:
     used_weight = sum(weight for _, weight in used)
     if used_weight == 0:
         return {"overall": None, "used_weight": 0}
-    weighted = 0.0
+    # Integer arithmetic: sum(((s-1)/4)*w) / used_weight * 100 == sum((s-1)*w) * 25 / used_weight
+    numerator = 0
     for key, weight in used:
         raw = scores[key]
         if not 1 <= raw <= 5:
             raise ValueError(f"criterion {key} score {raw} outside 1..5")
-        weighted += (raw - 1) / 4 * weight
-    overall = round(weighted / used_weight * 100)
+        numerator += (raw - 1) * weight
+    numerator *= 25
+    overall = (2 * numerator + used_weight) // (2 * used_weight)  # half-up rounding, no float drift
     return {"overall": overall, "used_weight": used_weight}
 
 

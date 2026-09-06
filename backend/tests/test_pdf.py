@@ -1,11 +1,11 @@
-import fitz
+import pymupdf
 import pytest
 
 from app.pdf import extract_pages, pages_to_prompt_text, validate_pdf_bytes
 
 
 def make_pdf(path, texts):
-    doc = fitz.open()
+    doc = pymupdf.open()
     for text in texts:
         page = doc.new_page()
         page.insert_text((72, 72), text)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TypedDict
 
-import fitz  # PyMuPDF
+import pymupdf
 
 PDF_MAGIC = b"%PDF"
 
@@ -23,7 +23,7 @@ def validate_pdf_bytes(data: bytes, max_mb: int) -> None:
 
 def extract_pages(path: str, max_pages: int) -> list[PageText]:
     pages: list[PageText] = []
-    with fitz.open(path) as doc:
+    with pymupdf.open(path) as doc:
         if doc.page_count > max_pages:
             raise ValueError(f"PDF has {doc.page_count} pages; limit is {max_pages}.")
         for page in doc:
