@@ -28,7 +28,7 @@ class OpenClawMonitoringAgent:
         self,
         gateway_url: str | None,
         token: str | None,
-        agent_id: str = "main",
+        agent_id: str = "default",
         timeout_seconds: int = 300,
         transport: httpx.AsyncBaseTransport | None = None,
     ):
@@ -56,8 +56,10 @@ class OpenClawMonitoringAgent:
         headers = {
             "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json",
-            "x-openclaw-agent-id": self.agent_id,
         }
+        if self.agent_id != "default":
+            # "default" is an alias only valid in the model name; the gateway rejects it as an explicit id.
+            headers["x-openclaw-agent-id"] = self.agent_id
         return f"{self.gateway_url}/v1/chat/completions", body, headers
 
     async def check_company(self, request: AgentRequest) -> AgentFinding:

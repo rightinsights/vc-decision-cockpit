@@ -5,11 +5,14 @@ import tempfile
 from pathlib import Path
 
 _TMP = Path(tempfile.mkdtemp(prefix="vcdc-test-"))
+os.environ["VCDC_NO_DOTENV"] = "1"  # never read the developer's real .env in tests
 os.environ["DATABASE_URL"] = f"sqlite:///{(_TMP / 'test.db').as_posix()}"
 os.environ["UPLOAD_DIR"] = str(_TMP / "uploads")
 os.environ["OPENAI_API_KEY"] = "test-key-not-used"
 os.environ["AGENT_PROVIDER"] = "mock"
+os.environ["LLM_PROVIDER"] = "openai"
 os.environ.pop("BRAVE_API_KEY", None)
+os.environ.pop("OPENCLAW_GATEWAY_TOKEN", None)
 
 import pymupdf  # noqa: E402
 import pytest  # noqa: E402

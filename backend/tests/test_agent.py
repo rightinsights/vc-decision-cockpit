@@ -129,6 +129,9 @@ def test_openclaw_builds_chat_completions_request():
     assert url == "http://gw:18789/v1/chat/completions"
     assert body["model"] == "openclaw/research" and body["stream"] is False
     assert headers["Authorization"] == "Bearer secret"
+    assert headers["x-openclaw-agent-id"] == "research"
+    _, _, default_headers = OpenClawMonitoringAgent(gateway_url="http://gw", token="t").build_request(REQUEST)
+    assert "x-openclaw-agent-id" not in default_headers  # gateway rejects 'default' as an explicit id
     user_text = body["messages"][1]["content"]
     assert "Acme Inspect" in user_text and "Are enterprise customers paying?" in user_text and "event_found" in user_text
 
@@ -144,7 +147,7 @@ async def test_openclaw_parses_gateway_reply():
 
     agent = OpenClawMonitoringAgent(gateway_url="http://gw:18789", token="secret", transport=httpx.MockTransport(handler))
     finding = await agent.check_company(REQUEST)
-    assert seen["auth"] == "Bearer secret" and seen["body"]["model"] == "openclaw/main"
+    assert seen["auth"] == "Bearer secret" and seen["body"]["model"] == "openclaw/default"
     assert finding.event_type == "FUNDING" and finding.summary == "Raised $4M seed."
 
 

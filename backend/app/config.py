@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -10,11 +11,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
+# Tests set VCDC_NO_DOTENV=1 so they never read a developer's real .env (and real keys).
+_ENV_FILES = () if os.environ.get("VCDC_NO_DOTENV") else (BACKEND_DIR.parent / ".env", BACKEND_DIR / ".env")
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=BACKEND_DIR / ".env", env_file_encoding="utf-8", extra="ignore"
-    )
+    # Repo-root .env first, backend/.env overrides it. Either location works.
+    model_config = SettingsConfigDict(env_file=_ENV_FILES, env_file_encoding="utf-8", extra="ignore")
 
     database_url: str = "sqlite:///./data/app.db"
     upload_dir: str = "./data/uploads"
@@ -37,6 +40,13 @@ class Settings(BaseSettings):
     brave_timeout_seconds: int = 20
 
     cors_origins: str = "http://localhost:3000"
+
+    @classmethod
+    def settings_customise_sources(cls, settings_cls, init_settings, env_settings, dotenv_settings, file_secret_settings):
+        # A .env in the repo wins over shell/user environment variables, so a stale key left in the
+        # Windows user environment cannot shadow the project's own configuration. Replit has no .env,
+        # so its Secrets (environment variables) still apply there.
+        return init_settings, dotenv_settings, env_settings, file_secret_settings
 
     def resolved_upload_dir(self) -> Path:
         path = Path(self.upload_dir)

@@ -53,7 +53,9 @@ class LLMClient:
 
         self._client = OpenAI(api_key=settings.openai_api_key)
         self.model = settings.openai_model
-        self.temperature = settings.llm_temperature
+        # Reasoning models (gpt-5 family, o-series) accept only the default temperature.
+        fixed_temperature = self.model.startswith(("gpt-5", "o1", "o3", "o4"))
+        self.temperature = None if fixed_temperature else settings.llm_temperature
 
     def parse(self, prompt_name: str, variables: dict[str, str], schema: type[T]) -> T:
         system, user = render_prompt(prompt_name, variables)
