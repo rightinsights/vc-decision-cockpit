@@ -95,17 +95,33 @@ The agent needs web search to do real research. OpenClaw's managed `web_search` 
 The gateway binds to loopback by default and refuses an unauthenticated non-loopback bind. To reach it from this app:
 
 - from a laptop: an SSH tunnel, `ssh -N -L 18789:127.0.0.1:18789 user@gateway-box`, then `OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789`;
-- from Replit: expose the gateway through Tailscale Funnel or a TLS reverse proxy with the bearer token kept on, and set `OPENCLAW_GATEWAY_URL` to that public HTTPS address.
+- from Replit: the gateway must be reachable over public HTTPS. The least-friction way for a demo window is a Cloudflare quick tunnel run **on the gateway box**, which connects to the loopback port locally so the gateway keeps its loopback bind and bearer-token auth:
+
+  ```bash
+  # on the OpenClaw box (gateway-box)
+  curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared && chmod +x cloudflared
+  ./cloudflared tunnel --url http://127.0.0.1:18789
+  # prints a https://<random>.trycloudflare.com URL; it changes every time the tunnel restarts
+  ```
+
+  Then in Replit Secrets set `OPENCLAW_GATEWAY_URL=https://<random>.trycloudflare.com` (no trailing slash) and keep `OPENCLAW_GATEWAY_TOKEN`. Verify from anywhere: `curl https://<random>.trycloudflare.com/health` should return `{"ok":true,...}`. The token is a full operator credential for the box: stop the tunnel after the demo and rotate the token if the URL was ever shared.
 
 The app sends the agent the company name, website, current concern, open evidence gap, last review date, and the investment question (see `backend/app/prompts/agent_task.md`). The reply is parsed leniently (fenced JSON, bare JSON, or JSON inside prose) and stored as a `monitoring_event` with its source URL. The finding becomes an `AGENT` evidence row, the thesis is rescored, and the Decision Room shows before, new evidence, after. The human decision is never modified.
 
 ## Deploy on Replit
 
-1. Push this repo to GitHub.
-2. Import the GitHub repo into Replit. `.replit` declares the Node and Python modules, a Reserved VM deployment target, `build.sh`, and `start.sh`.
-3. Add Secrets: `OPENAI_API_KEY`, and for the real agent `AGENT_PROVIDER=openclaw`, `OPENCLAW_GATEWAY_URL`, `OPENCLAW_GATEWAY_TOKEN`. Deployment secrets are a separate store from workspace secrets; add them in the Publishing pane too.
-4. Create the built-in PostgreSQL database so `DATABASE_URL` is injected. The deployment filesystem resets on every publish, so SQLite is not suitable there.
-5. Publish. Next.js listens on port 3000, mapped to external port 80, and proxies `/api/*` to FastAPI on 127.0.0.1:8000.
+1. Push this repo to GitHub (done: `rightinsights/vc-decision-cockpit`, private).
+2. In Replit: Create App, Import from GitHub, authorise GitHub, pick the repo. `.replit` declares the Node and Python modules, a Reserved VM deployment target, `build.sh`, and `start.sh`. If the import wizard asks for a run command, keep `bash start.sh`.
+3. Tools, Database, create the built-in PostgreSQL. This injects `DATABASE_URL`; the app rewrites it to the psycopg driver and creates tables on first start. The deployment filesystem resets on every publish, so SQLite is not used there.
+4. Tools, Secrets, add:
+   `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-5-mini`, `BRAVE_API_KEY`,
+   `AGENT_PROVIDER=openclaw`, `OPENCLAW_GATEWAY_URL` (the public HTTPS tunnel URL from the OpenClaw section), `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_AGENT_ID=default`.
+   Deployment secrets are a separate store from workspace secrets: when you publish, open the deployment's Secrets pane and confirm the same keys are present there.
+5. Press Run once in the workspace to confirm `build.sh` and `start.sh` work (first run installs and builds, a few minutes). Open the webview: the pipeline should load and `/api/health` should return `{"status":"ok"}`.
+6. Publish, choose Reserved VM (already the target in `.replit`), smallest size. Next.js listens on port 3000, mapped to external port 80, and proxies `/api/*` to FastAPI on 127.0.0.1:8000. The public URL is `https://<app-name>.replit.app`.
+7. On the public URL: add Oii.ai, upload `backend/data/demo/oii-ai-seed-deck-2023-techcrunch.pdf` (download it from the repo first), run analysis, record WATCH, run research, run one agent check. That reproduces the recorded run in `RESEARCH_NOTES.md`.
+
+If the build fails on module names, the two most likely fixes are changing `modules` in `.replit` to the ids Replit offers in its Modules pane (Node 20 or 22, Python 3.11 or 3.12) and re-running.
 
 Uploaded PDFs are stored on the deployment filesystem and will not survive a republish; the extracted page text lives in the database, so analysis history is kept.
 
