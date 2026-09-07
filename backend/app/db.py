@@ -38,5 +38,7 @@ def get_db() -> Iterator[Session]:
 
 def init_db(target_engine=None) -> None:
     from . import models  # noqa: F401  (register tables)
+    from .migrate import ensure_columns
 
     Base.metadata.create_all(bind=target_engine or engine)
+    ensure_columns(target_engine or engine)

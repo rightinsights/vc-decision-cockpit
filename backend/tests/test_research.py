@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from app.llm_schemas import AssessmentOutput, DeckExtraction, ResearchFactOut, ResearchReport
+from app.llm_schemas import AssessmentOutput, DeckExtraction, ResearchFactOut, ResearchReport, ResearchSnapshot
 from app.services.brave import BraveClient, ResearchError, build_queries, gather_results, get_brave
 from app.main import app
 from tests.conftest import CANNED_SCORES, canned_assessment, canned_extraction, create_company_with_deck, error_of, install_fake_llm
@@ -52,6 +52,9 @@ def canned_report(extra_url="https://news.example/acme-pilots", claim_id=None):
         ],
         unknowns=["Founder backgrounds"],
         entity_note=None,
+        snapshot=ResearchSnapshot(problem="Weld reports are re-keyed by hand.", workflow="Post-inspection reporting", customer="Pipeline operators",
+                                  buyer=None, solution="AI-drafted inspection reports", business_model=None, founders=[], traction=["Two utility pilots"],
+                                  funding_ask=None, stage="seed", geography="United States"),
     )
 
 
@@ -87,7 +90,7 @@ async def test_brave_errors_are_explicit():
 # ---- research endpoint ----
 
 def test_research_without_deck_keeps_only_sourced_facts(client):
-    fake = install_fake_llm({ResearchReport: canned_report()})
+    fake = install_fake_llm({ResearchReport: canned_report(), AssessmentOutput: canned_assessment()})
     transport, _ = brave_transport()
     install_brave(BraveClient("brave-key", transport=transport))
     company = client.post("/companies", json={"name": "Acme Inspect", "website": "https://acmeinspect.example"}).json()
@@ -99,7 +102,9 @@ def test_research_without_deck_keeps_only_sourced_facts(client):
     assert body["result_count"] == 2 and body["domain_count"] == 2
     assert body["facts_kept"] == 1 and body["facts_dropped"] == 1  # fabricated URL dropped
     assert body["facts"][0]["source_url"] == "https://news.example/acme-pilots"
-    assert body["reassessment"] is None  # no assessment yet, nothing to rescore
+    assert body["snapshot_applied"] is True and body["initial_assessment"] is True
+    assert body["reassessment"]["assessment_before"] is None  # first thesis fit came from public sources
+    assert body["reassessment"]["assessment_after"]["trigger"] == "RESEARCH"
     assert body["unknowns"] == ["Founder backgrounds"]
 
     prompt_vars = next(v for name, v in fake.calls if name == "research")
@@ -111,7 +116,10 @@ def test_research_without_deck_keeps_only_sourced_facts(client):
     assert fetched["id"] == body["id"]
     analysis = client.get(f"/companies/{company['id']}/analysis").json()
     assert analysis["research"]["facts_kept"] == 1
-    assert client.get(f"/companies/{company['id']}/changes").json()[0]["kind"] == "RESEARCH"
+    assert analysis["snapshot"]["problem"] == "Weld reports are re-keyed by hand." and analysis["snapshot"]["source"] == "web"
+    assert analysis["company"]["stage"] == "seed"
+    assert analysis["assessment"]["trigger"] == "RESEARCH"
+    assert [e["kind"] for e in client.get(f"/companies/{company['id']}/changes").json()] == ["RESEARCH", "ASSESSMENT"]
 
 
 def test_research_after_deck_links_evidence_and_rescores(client, deck_pdf):
@@ -149,7 +157,7 @@ def test_research_after_deck_links_evidence_and_rescores(client, deck_pdf):
 
 
 def test_research_reports_search_and_key_failures(client):
-    install_fake_llm({ResearchReport: canned_report()})
+    install_fake_llm({ResearchReport: canned_report(), AssessmentOutput: canned_assessment()})
     company = client.post("/companies", json={"name": "Acme"}).json()
     assert client.get(f"/companies/{company['id']}/research").status_code == 404
 

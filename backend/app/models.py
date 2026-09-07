@@ -59,6 +59,7 @@ class Document(Base):
     file_name: Mapped[str] = mapped_column(String(300))
     file_path: Mapped[str] = mapped_column(String(1000))
     page_count: Mapped[int] = mapped_column(Integer)
+    ocr_pages: Mapped[int] = mapped_column(Integer, default=0)  # pages transcribed from images by the vision model
     extracted_text: Mapped[str] = mapped_column(Text)
     pages_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

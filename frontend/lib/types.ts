@@ -27,6 +27,7 @@ export interface DocumentInfo {
   company_id: string;
   file_name: string;
   page_count: number;
+  ocr_pages: number;
   created_at: string;
 }
 
@@ -103,6 +104,7 @@ export interface Thesis {
   criteria: Criterion[];
   positive_signals: string[];
   out_of_scope: string[];
+  investor_note: string;
 }
 
 export interface MonitoringEvent {
@@ -132,6 +134,7 @@ export interface Snapshot {
   traction: string[];
   funding_ask: string | null;
   unknowns: string[];
+  source?: "deck" | "web";
 }
 
 export interface Analysis {
@@ -161,6 +164,8 @@ export interface ResearchFact {
 export interface Research {
   id: string;
   brief: string;
+  snapshot_applied: boolean;
+  initial_assessment: boolean;
   queries: string[];
   result_count: number;
   domain_count: number;

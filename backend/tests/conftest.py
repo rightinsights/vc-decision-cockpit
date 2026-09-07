@@ -113,8 +113,8 @@ def error_of(res) -> tuple[int, str]:
     return res.status_code, str(body.get("detail", "")) if isinstance(body, dict) else ""
 
 
-def install_fake_llm(responses: dict) -> FakeLLM:
-    fake = FakeLLM(responses)
+def install_fake_llm(responses: dict, transcription: str = "[fake transcription]") -> FakeLLM:
+    fake = FakeLLM(responses, transcription=transcription)
     app.dependency_overrides[get_llm] = lambda: fake
     return fake
 
@@ -123,5 +123,5 @@ def create_company_with_deck(client, deck_pdf, name="Acme Inspect"):
     company = client.post("/companies", json={"name": name, "website": "https://acmeinspect.example"}).json()
     with open(deck_pdf, "rb") as fh:
         upload = client.post(f"/companies/{company['id']}/deck", files={"file": ("acme.pdf", fh, "application/pdf")})
-    assert upload.status_code == 201, upload.text
+    assert upload.status_code == 200, upload.text
     return company

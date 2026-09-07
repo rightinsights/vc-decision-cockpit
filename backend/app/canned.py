@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from .llm import LLMError, render_prompt
 from .llm_schemas import (
     AssessmentOutput, CriterionScore, DeckExtraction, DiligenceQuestionOut, ExtractedClaim, ExtractedFounder,
-    NewEvidence, NoteAnalysis, QuestionSet, ResearchFactOut, ResearchReport,
+    NewEvidence, NoteAnalysis, QuestionSet, ResearchFactOut, ResearchReport, ResearchSnapshot,
 )
 from .thesis import CRITERION_KEYS
 
@@ -26,6 +26,9 @@ BASE_SCORES = {
 
 class CannedLLM:
     name = "canned"
+
+    def transcribe_image(self, png_bytes: bytes, prompt: str) -> str:
+        return "[canned] Image-only page; set OPENAI_API_KEY for real transcription."
 
     def parse(self, prompt_name: str, variables: dict[str, str], schema: type[T]) -> T:
         render_prompt(prompt_name, variables)
@@ -55,6 +58,10 @@ class CannedLLM:
             ],
             unknowns=["[canned] Everything. This is placeholder output."],
             entity_note=None,
+            snapshot=ResearchSnapshot(
+                problem=f"[canned] Placeholder problem statement for {name}.", workflow=None, customer=None, buyer=None,
+                solution=None, business_model=None, founders=[], traction=[], funding_ask=None, stage=None, geography=None,
+            ),
         )
 
     def _extraction(self, variables: dict[str, str]) -> DeckExtraction:

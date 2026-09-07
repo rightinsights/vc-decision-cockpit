@@ -37,6 +37,14 @@ export default function ThesisPage() {
         </section>
       </div>
 
+      {thesis.investor_note && (
+        <section className="panel" style={{ borderTopColor: "var(--orange)" }}>
+          <p className="eyebrow mb-1">About the investor</p>
+          <h2 className="display mb-3 text-2xl">Why this thesis</h2>
+          <p className="max-w-[900px] text-[15px] leading-relaxed">{thesis.investor_note}</p>
+        </section>
+      )}
+
       <section className="panel">
         <p className="eyebrow mb-1">Scoring</p>
         <h2 className="display mb-4 text-2xl">How the score is built</h2>

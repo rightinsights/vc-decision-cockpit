@@ -87,11 +87,13 @@ def criteria_block() -> str:
 # ---- extraction ----
 
 def apply_extraction(company: Company, extraction: DeckExtraction) -> None:
+    """Deck is primary. Fields the deck does not state keep whatever public research filled in earlier."""
     company.name = company.name or extraction.company_name or company.name
     company.website = company.website or extraction.website
     company.stage = company.stage or extraction.stage
     company.geography = company.geography or extraction.geography
-    company.snapshot_json = {
+    previous = company.snapshot_json or {}
+    fresh = {
         "company_name": extraction.company_name,
         "founders": [f.model_dump() for f in extraction.founders],
         "problem": extraction.problem,
@@ -103,7 +105,11 @@ def apply_extraction(company: Company, extraction: DeckExtraction) -> None:
         "traction": extraction.traction,
         "funding_ask": extraction.funding_ask,
         "unknowns": extraction.unknowns,
+        "source": "deck",
     }
+    merged = {k: (v if v not in (None, [], "") else previous.get(k)) for k, v in fresh.items()}
+    merged["source"] = "deck"
+    company.snapshot_json = merged
 
 
 _WORD = re.compile(r"[a-z0-9]{4,}")
@@ -267,6 +273,7 @@ def build_analysis(db: Session, company: Company) -> AnalysisOut:
             criteria=criteria_meta.get("criteria", T.CRITERIA),
             positive_signals=criteria_meta.get("positive_signals", T.POSITIVE_SIGNALS),
             out_of_scope=criteria_meta.get("out_of_scope", T.OUT_OF_SCOPE),
+            investor_note=criteria_meta.get("investor_note", T.INVESTOR_NOTE),
         ),
         monitoring_events=[MonitoringEventOut.model_validate(e) for e in events],
     )

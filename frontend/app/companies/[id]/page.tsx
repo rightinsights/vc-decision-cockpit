@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { AgentCheck } from "@/components/agent-check";
 import { ClaimsLedger } from "@/components/claims-ledger";
 import { DeckPanel } from "@/components/deck-panel";
@@ -13,6 +13,7 @@ import { QuestionList } from "@/components/questions";
 import { ResearchPanel } from "@/components/research-panel";
 import { SnapshotRail } from "@/components/snapshot";
 import { ScoreTile, VerdictMark } from "@/components/status-mark";
+import { Steps } from "@/components/steps";
 import { ThesisFit } from "@/components/thesis-fit";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
@@ -28,6 +29,9 @@ const STEP_RESEARCH = "Searching the web with Brave and reading the results.";
 
 export default function DecisionRoomPage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const autoResearch = searchParams.get("research") === "1";
+  const autoStarted = useRef(false);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [history, setHistory] = useState<Decision[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +93,17 @@ export default function DecisionRoomPage() {
       await api.meetingQuestions(id);
     });
 
+  // A newly created company researches itself once, straight from name and website.
+  useEffect(() => {
+    if (!autoResearch || !analysis || analysis.research !== null || autoStarted.current) return;
+    autoStarted.current = true;
+    const timer = setTimeout(() => {
+      void runResearch(undefined);
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoResearch, analysis]);
+
   if (!analysis) {
     return (
       <div className="space-y-4">
@@ -136,6 +151,8 @@ export default function DecisionRoomPage() {
 
       <ErrorNotice message={error} onDismiss={() => setError(null)} />
 
+      <Steps analysis={analysis} busy={busy} />
+
       <DeckPanel
         document={document}
         hasAnalysis={assessment !== null}
@@ -149,7 +166,7 @@ export default function DecisionRoomPage() {
       <div className="grid gap-8 lg:grid-cols-[340px_1fr]">
         <aside className="space-y-8">
           <section className="panel">
-            <SectionTitle eyebrow="Company snapshot">What the deck says</SectionTitle>
+            <SectionTitle eyebrow="Company snapshot">{snapshot?.source === "web" ? "What public sources say" : "What the deck says"}</SectionTitle>
             <SnapshotRail snapshot={snapshot} />
           </section>
           <section className="panel">

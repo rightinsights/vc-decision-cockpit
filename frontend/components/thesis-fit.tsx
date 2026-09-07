@@ -14,7 +14,7 @@ function Track({ score }: { score: number | null }) {
 
 export function ThesisFit({ assessment, criteria }: { assessment: Assessment | null; criteria: Criterion[] }) {
   if (!assessment) {
-    return <p className="text-sm text-muted-foreground">Criterion scores appear after the deck is analyzed.</p>;
+    return <p className="text-sm text-muted-foreground">Criterion scores appear once public research or the deck analysis has run.</p>;
   }
   return (
     <div>

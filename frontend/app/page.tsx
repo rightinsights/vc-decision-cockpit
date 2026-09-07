@@ -48,8 +48,7 @@ export default function PipelinePage() {
       <div className="flex flex-wrap items-end justify-between gap-6">
         <div>
           <p className="eyebrow mb-2">Active dealflow</p>
-          <h1 className="display text-[64px]">Investment pipeline</h1>
-          <p className="mt-2 text-[17px] text-muted-foreground">Claims are not facts. Review the evidence before the score.</p>
+          <h1 className="display text-[40px]">Investment pipeline</h1>
         </div>
         <Button size="lg" className="px-5 text-[15px] font-bold" onClick={() => setAdding(true)}>+ Add company</Button>
       </div>

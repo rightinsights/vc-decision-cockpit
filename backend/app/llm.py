@@ -85,13 +85,40 @@ class LLMClient:
         )
         return message.parsed
 
+    def transcribe_image(self, png_bytes: bytes, prompt: str) -> str:
+        """Vision transcription for image-only deck pages. Returns plain text."""
+        import base64
+
+        data = base64.b64encode(png_bytes).decode()
+        try:
+            completion = self._client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{data}", "detail": "high"}},
+                ]}],
+            )
+        except Exception as exc:
+            raise LLMError(f"transcribe_image: {exc}") from exc
+        text = (completion.choices[0].message.content or "").strip()
+        usage = completion.usage
+        log.info("llm transcribe model=%s in=%s out=%s", completion.model,
+                 getattr(usage, "prompt_tokens", "?"), getattr(usage, "completion_tokens", "?"))
+        return text
+
 
 class FakeLLM:
     """Test double. `responses` maps schema class -> instance or list of instances (consumed in order)."""
 
-    def __init__(self, responses: dict[type[BaseModel], BaseModel | list[BaseModel]]):
+    def __init__(self, responses: dict[type[BaseModel], BaseModel | list[BaseModel]], transcription: str = "[fake transcription]"):
         self._responses = {k: (list(v) if isinstance(v, list) else v) for k, v in responses.items()}
         self.calls: list[tuple[str, dict[str, str]]] = []
+        self.transcription = transcription
+        self.transcribed: list[int] = []  # byte sizes of images received
+
+    def transcribe_image(self, png_bytes: bytes, prompt: str) -> str:
+        self.transcribed.append(len(png_bytes))
+        return self.transcription
 
     def parse(self, prompt_name: str, variables: dict[str, str], schema: type[T]) -> T:
         render_prompt(prompt_name, variables)  # prove the prompt file exists and renders

@@ -33,11 +33,11 @@ export function DeckPanel({ document, hasAnalysis, busy, onUpload, onAnalyze, on
       <div className="flex items-center gap-4">
         <span className="flex size-11 items-center justify-center rounded-md text-[11px] font-bold text-white" style={{ background: "var(--pass)" }}>PDF</span>
         <div>
-          <div className="text-[15px] font-bold">{document ? document.file_name : "Pitch deck"}</div>
+          <div className="text-[15px] font-bold">{document ? document.file_name : "Pitch deck (optional)"}</div>
           <div className="text-sm text-muted-foreground">
             {document
-              ? `${document.page_count} pages, text extracted with slide references, uploaded ${formatDate(document.created_at)}`
-              : "Upload a public or non-confidential PDF, up to 25 MB. Every claim will cite its slide."}
+              ? `${document.page_count} pages${document.ocr_pages ? `, ${document.ocr_pages} transcribed from images` : ""}, slide references kept, uploaded ${formatDate(document.created_at)}`
+              : "Public research runs without it. Add the deck for claim-level scoring and the five questions. PDF up to 25 MB; image-only pages are transcribed."}
           </div>
         </div>
       </div>

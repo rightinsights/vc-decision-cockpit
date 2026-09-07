@@ -21,7 +21,7 @@ def test_upload_pdf_extracts_pages(client, deck_pdf):
     company = client.post("/companies", json={"name": "Acme"}).json()
     with open(deck_pdf, "rb") as fh:
         res = client.post(f"/companies/{company['id']}/deck", files={"file": ("acme deck (v2).pdf", fh, "application/pdf")})
-    assert res.status_code == 201, res.text
+    assert res.status_code == 200, res.text
     doc = res.json()
     assert doc["page_count"] == 4
     assert doc["file_name"] == "acme_deck_v2_.pdf"

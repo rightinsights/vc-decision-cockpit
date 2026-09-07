@@ -20,4 +20,5 @@ def read_thesis(db: Session = Depends(get_db)) -> ThesisOut:
         criteria=meta.get("criteria", T.CRITERIA),
         positive_signals=meta.get("positive_signals", T.POSITIVE_SIGNALS),
         out_of_scope=meta.get("out_of_scope", T.OUT_OF_SCOPE),
+        investor_note=meta.get("investor_note", T.INVESTOR_NOTE),
     )

@@ -142,11 +142,27 @@ class ResearchFactOut(StrictModel):
     relation: Relation | None
 
 
+class ResearchSnapshot(StrictModel):
+    """Company profile fields derivable from the search results only. Null when the results do not say."""
+    problem: str | None
+    workflow: str | None
+    customer: str | None
+    buyer: str | None
+    solution: str | None
+    business_model: str | None
+    founders: list[ExtractedFounder]
+    traction: list[str]
+    funding_ask: str | None
+    stage: str | None
+    geography: str | None
+
+
 class ResearchReport(StrictModel):
     summary: str
     facts: list[ResearchFactOut]
     unknowns: list[str]
     entity_note: str | None  # e.g. "results about a different company named X were ignored"
+    snapshot: ResearchSnapshot
 
 
 # ---- Agent finding (BUILD_SPEC §10) ----

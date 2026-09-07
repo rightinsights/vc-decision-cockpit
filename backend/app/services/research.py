@@ -1,4 +1,7 @@
-"""Public research: Brave results -> one structured OpenAI call -> sourced facts as WEB evidence -> optional rescore."""
+"""
+Public research, the first step for any company: Brave results -> one structured OpenAI call ->
+sourced facts as WEB evidence -> profile snapshot (if no deck yet) -> thesis fit (initial or rescore).
+"""
 
 from __future__ import annotations
 
@@ -8,17 +11,20 @@ from collections import Counter
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from .. import thesis as T
 from ..llm import LLMClient
-from ..llm_schemas import ResearchReport
+from ..llm_schemas import ResearchReport, ResearchSnapshot
 from ..models import Company, Evidence, ResearchRun
 from ..schemas import ReassessmentOut, ResearchFactView, ResearchOut
-from .analysis import claims_block, company_claims, latest_assessment, run_assessment
+from .analysis import claims_block, company_claims, latest_assessment, match_claim_id, run_assessment
 from .brave import BraveClient, build_queries, domain_of, gather_results, normalize_url
-from .reassess import build_reassessment, match_claim_id
+from .reassess import build_reassessment
 
 DEFAULT_BRIEF = (
-    "Build a sourced profile: founders and their domain background, product, target customers, "
-    "evidence of paying customers or pilots, funding, competitors, and material risks."
+    "Assess this company against the thesis from public sources: who the founders are and whether they have firsthand "
+    "experience of the workflow; what expensive, manual, or expert-heavy workflow the product automates and for whom; "
+    "who buys it; evidence of paying customers, pilots, or revenue; proprietary data, integrations, or other defensibility; "
+    "sector, stage, geography, funding, competitors, and material risks."
 )
 
 
@@ -33,6 +39,8 @@ def research_view(run: ResearchRun, reassessment: ReassessmentOut | None = None)
     return ResearchOut(
         id=run.id,
         brief=run.brief,
+        snapshot_applied=bool(report.get("snapshot_applied")),
+        initial_assessment=bool(report.get("initial_assessment")),
         queries=list(run.queries_json or []),
         result_count=len(run.results_json or []),
         domain_count=len([d for d in domains if d]),
@@ -48,6 +56,32 @@ def research_view(run: ResearchRun, reassessment: ReassessmentOut | None = None)
     )
 
 
+def apply_web_snapshot(company: Company, snap: ResearchSnapshot) -> bool:
+    """Fill the profile from public sources when there is no deck yet. Deck extraction later overrides non-null fields."""
+    if company.snapshot_json and company.snapshot_json.get("source") != "web":
+        return False  # a deck already populated the profile
+    values = {
+        "company_name": company.name,
+        "founders": [f.model_dump() for f in snap.founders],
+        "problem": snap.problem,
+        "workflow": snap.workflow,
+        "customer": snap.customer,
+        "buyer": snap.buyer,
+        "solution": snap.solution,
+        "business_model": snap.business_model,
+        "traction": snap.traction,
+        "funding_ask": snap.funding_ask,
+        "unknowns": [],
+        "source": "web",
+    }
+    if not any(v for k, v in values.items() if k not in ("company_name", "founders", "traction", "unknowns", "source")) and not snap.founders and not snap.traction:
+        return False
+    company.snapshot_json = values
+    company.stage = company.stage or snap.stage
+    company.geography = company.geography or snap.geography
+    return True
+
+
 async def run_research(db: Session, company: Company, llm: LLMClient, brave: BraveClient, brief: str | None) -> ResearchOut:
     brief = (brief or "").strip() or DEFAULT_BRIEF
     queries = build_queries(company.name, company.website, brief)
@@ -56,6 +90,9 @@ async def run_research(db: Session, company: Company, llm: LLMClient, brave: Bra
     report = llm.parse(
         "research",
         {
+            "thesis_text": T.THESIS_TEXT,
+            "positive_signals": "\n".join(f"- {s}" for s in T.POSITIVE_SIGNALS),
+            "out_of_scope": "\n".join(f"- {s}" for s in T.OUT_OF_SCOPE),
             "company_name": company.name,
             "website": company.website or "unknown",
             "stage_geography": ", ".join(x for x in (company.stage, company.geography) if x) or "unknown",
@@ -84,6 +121,9 @@ async def run_research(db: Session, company: Company, llm: LLMClient, brave: Bra
             fact.relation = None
         kept.append(fact)
 
+    snapshot_applied = apply_web_snapshot(company, report.snapshot)
+    before = latest_assessment(db, company.id)
+
     run = ResearchRun(
         company_id=company.id,
         brief=brief,
@@ -94,6 +134,8 @@ async def run_research(db: Session, company: Company, llm: LLMClient, brave: Bra
             "entity_note": report.entity_note,
             "unknowns": report.unknowns,
             "facts": [f.model_dump() for f in kept],
+            "snapshot_applied": snapshot_applied,
+            "initial_assessment": before is None,
         },
         facts_kept=len(kept),
         facts_dropped=dropped,
@@ -119,8 +161,7 @@ async def run_research(db: Session, company: Company, llm: LLMClient, brave: Bra
     db.flush()
 
     reassessment: ReassessmentOut | None = None
-    before = latest_assessment(db, company.id)
-    if before is not None and kept:
+    if kept or before is None:
         lines = [f"PUBLIC RESEARCH ({run.created_at.date().isoformat()}, Brave + OpenAI): {report.summary}"]
         for fact in kept:
             lines.append(f"- [{fact.category}, {fact.confidence}] {fact.finding} (source: {fact.source_url})")

@@ -4,14 +4,14 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="border-t border-border py-3 first:border-t-0 first:pt-0">
       <div className="rail-label">{label}</div>
-      <div className="mt-1 text-[15px] leading-snug">{value ?? <span className="text-muted-foreground">Not stated in deck</span>}</div>
+      <div className="mt-1 text-[15px] leading-snug">{value ?? <span className="text-muted-foreground">Not stated in sources</span>}</div>
     </div>
   );
 }
 
 export function SnapshotRail({ snapshot }: { snapshot: Snapshot | null }) {
   if (!snapshot) {
-    return <p className="text-sm text-muted-foreground">The snapshot appears after the deck is analyzed.</p>;
+    return <p className="text-sm text-muted-foreground">The snapshot fills in from public research, then from the deck.</p>;
   }
   const founders = snapshot.founders.length
     ? snapshot.founders.map((f) => (

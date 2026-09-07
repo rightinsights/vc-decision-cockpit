@@ -32,6 +32,7 @@ class ThesisOut(OrmModel):
     criteria: list[dict[str, Any]]
     positive_signals: list[str]
     out_of_scope: list[str]
+    investor_note: str = ""
 
 
 # ---- Companies ----
@@ -76,6 +77,7 @@ class DocumentOut(OrmModel):
     company_id: str
     file_name: str
     page_count: int
+    ocr_pages: int = 0
     created_at: UtcDateTime
 
 
@@ -232,6 +234,8 @@ class ResearchFactView(BaseModel):
 class ResearchOut(BaseModel):
     id: str
     brief: str
+    snapshot_applied: bool = False  # public-source snapshot filled the company profile (no deck yet)
+    initial_assessment: bool = False  # this research produced the first thesis fit (no deck yet)
     queries: list[str]
     result_count: int
     domain_count: int

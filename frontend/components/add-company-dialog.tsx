@@ -30,7 +30,7 @@ export function AddCompanyDialog({ open, onOpenChange }: { open: boolean; onOpen
         geography: geography.trim() || undefined,
       });
       onOpenChange(false);
-      router.push(`/companies/${company.id}`);
+      router.push(`/companies/${company.id}?research=1`);  // public research starts automatically in the room
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not create the company.");
     } finally {
@@ -44,7 +44,7 @@ export function AddCompanyDialog({ open, onOpenChange }: { open: boolean; onOpen
         <form onSubmit={submit} className="space-y-5">
           <DialogHeader>
             <DialogTitle>Add a company</DialogTitle>
-            <DialogDescription>Only the name is required. The deck fills in the rest.</DialogDescription>
+            <DialogDescription>Name and website are enough to start. Public research runs against the thesis right away; add the deck afterwards for claim-level scoring.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">

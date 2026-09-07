@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { IBM_Plex_Sans, Playfair_Display } from "next/font/google";
+import { BrandMark } from "@/components/brand-mark";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -16,8 +17,8 @@ const display = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Decision Cockpit",
-  description: "Claims, evidence, thesis fit, and what changed for early-stage deals.",
+  title: "Right Insights Investments",
+  description: "AI-assisted decision agent for early-stage investing. Make informed decisions quickly and accurately.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -27,22 +28,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="bg-forest text-paper" style={{ borderBottom: "3px solid var(--orange)" }}>
           <div className="mx-auto flex h-16 max-w-[1320px] items-center justify-between px-8">
             <Link href="/" className="flex items-center gap-3">
-              <span className="flex size-8 items-center justify-center border border-paper/40 text-[11px] font-bold tracking-wider">VC</span>
-              <span className="display text-[22px] font-bold">Decision Cockpit</span>
+              <BrandMark size={38} />
+              <span className="display text-[22px] font-bold">Right Insights Investments</span>
             </Link>
             <nav className="flex items-center gap-7 text-[12px] font-bold uppercase tracking-[0.14em] text-paper/80">
               <Link href="/" className="hover:text-paper">Pipeline</Link>
               <Link href="/thesis" className="hover:text-paper">Thesis</Link>
               <span className="inline-flex items-center gap-2 text-paper/90">
                 <span className="size-2 rounded-full" style={{ background: "#4fd1a5" }} aria-hidden />
-                Evidence-first investing
+                AI-assisted decision agent
               </span>
             </nav>
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1320px] flex-1 px-8 py-10">{children}</main>
         <footer className="mx-auto w-full max-w-[1320px] px-8 pb-8 text-xs text-muted-foreground">
-          AI recommends. The human decision is only ever changed by hand.
+          AI-assisted decision agent. Make informed decisions quickly and accurately.
         </footer>
       </body>
     </html>
