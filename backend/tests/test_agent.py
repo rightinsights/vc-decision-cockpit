@@ -48,6 +48,14 @@ def test_mock_agent_check_creates_event_evidence_and_reassessment(client, deck_p
     assert body["event"]["agent_provider"] == "mock"
     assert "resolves this concern" in body["event"]["investment_question"]
     assert len(body["new_evidence"]) == 1
+    # first check looks back 180 days, not "since today"
+    from datetime import datetime, timedelta
+    from app.services.agent_check import lookback_date
+    from app.db import SessionLocal
+    from app.models import Company
+    with SessionLocal() as db:
+        company_row = db.get(Company, cid)
+        assert lookback_date(db, company_row) == datetime.utcnow().date()  # a check now exists, so the next one looks back to it
     assert body["new_evidence"][0]["source_type"] == "AGENT"
     assert body["new_evidence"][0]["source_url"] == body["event"]["source_url"]
     # open gap = weakest claim with missing proof (the LOW-strength ROI claim); agent evidence maps onto it
@@ -161,3 +169,14 @@ async def test_openclaw_surfaces_gateway_errors():
     )
     with pytest.raises(AgentError, match="401"):
         await agent.check_company(REQUEST)
+
+
+def test_first_agent_check_uses_180_day_lookback(client, deck_pdf):
+    from datetime import datetime, timedelta
+    from app.db import SessionLocal
+    from app.models import Company
+    from app.services.agent_check import lookback_date
+    install_fake_llm({DeckExtraction: canned_extraction(), AssessmentOutput: canned_assessment()})
+    company = create_company_with_deck(client, deck_pdf)
+    with SessionLocal() as db:
+        assert lookback_date(db, db.get(Company, company["id"])) == (datetime.utcnow() - timedelta(days=180)).date()

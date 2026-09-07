@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime, timedelta
+
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..agents.base import AgentRequest, MonitoringAgent
@@ -27,6 +30,22 @@ def default_question(concern: str) -> str:
     return f"Is there new external evidence that resolves this concern: {concern.rstrip('.')}?"
 
 
+FIRST_CHECK_LOOKBACK_DAYS = 180
+
+
+def lookback_date(db: Session, company: Company) -> date:
+    """
+    'Developments since' for the agent. The previous agent check if there was one; otherwise a
+    180-day window. Using the decision date would make a first check search "since today".
+    """
+    previous = db.execute(
+        select(MonitoringEvent).where(MonitoringEvent.company_id == company.id).order_by(MonitoringEvent.created_at.desc())
+    ).scalars().first()
+    if previous is not None:
+        return previous.created_at.date()
+    return (datetime.utcnow() - timedelta(days=FIRST_CHECK_LOOKBACK_DAYS)).date()
+
+
 async def run_agent_check(
     db: Session, company: Company, llm: LLMClient, agent: MonitoringAgent, investment_question: str | None,
 ) -> ReassessmentOut:
@@ -44,7 +63,7 @@ async def run_agent_check(
         website=company.website,
         concern=concern,
         open_gap=open_gap_for(db, company),
-        last_review_date=decision.created_at.date().isoformat(),
+        last_review_date=lookback_date(db, company).isoformat(),
         investment_question=question,
     )
     finding = await agent.check_company(request)
