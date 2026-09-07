@@ -86,12 +86,20 @@ def criteria_block() -> str:
 
 # ---- extraction ----
 
+def short_label(value: str | None, limit: int = 24) -> str | None:
+    """Stage/geography must stay table-sized; models occasionally answer in sentences."""
+    if not value:
+        return None
+    text = value.strip().split(".")[0].split("(")[0].strip().rstrip(",;")
+    return text[:limit].rstrip() or None
+
+
 def apply_extraction(company: Company, extraction: DeckExtraction) -> None:
     """Deck is primary. Fields the deck does not state keep whatever public research filled in earlier."""
     company.name = company.name or extraction.company_name or company.name
     company.website = company.website or extraction.website
-    company.stage = company.stage or extraction.stage
-    company.geography = company.geography or extraction.geography
+    company.stage = company.stage or short_label(extraction.stage)
+    company.geography = company.geography or short_label(extraction.geography, 60)
     previous = company.snapshot_json or {}
     fresh = {
         "company_name": extraction.company_name,

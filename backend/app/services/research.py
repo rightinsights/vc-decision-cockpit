@@ -16,7 +16,7 @@ from ..llm import LLMClient
 from ..llm_schemas import ResearchReport, ResearchSnapshot
 from ..models import Company, Evidence, ResearchRun
 from ..schemas import ReassessmentOut, ResearchFactView, ResearchOut
-from .analysis import claims_block, company_claims, latest_assessment, match_claim_id, run_assessment
+from .analysis import claims_block, company_claims, latest_assessment, match_claim_id, run_assessment, short_label
 from .brave import BraveClient, build_queries, domain_of, gather_results, normalize_url
 from .reassess import build_reassessment
 
@@ -77,8 +77,8 @@ def apply_web_snapshot(company: Company, snap: ResearchSnapshot) -> bool:
     if not any(v for k, v in values.items() if k not in ("company_name", "founders", "traction", "unknowns", "source")) and not snap.founders and not snap.traction:
         return False
     company.snapshot_json = values
-    company.stage = company.stage or snap.stage
-    company.geography = company.geography or snap.geography
+    company.stage = company.stage or short_label(snap.stage)
+    company.geography = company.geography or short_label(snap.geography, 60)
     return True
 
 

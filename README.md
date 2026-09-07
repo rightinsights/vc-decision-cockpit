@@ -65,6 +65,16 @@ All settings are environment variables, read from `backend/.env` locally and fro
 | `BRAVE_API_KEY` | Enables the Public research panel. The app calls Brave directly. |
 | `LLM_PROVIDER` | `openai` (default) or `canned` for key-less UI work. |
 
+## How a company moves through the cockpit
+
+1. **Add company** with name and website. Public research starts automatically: Brave search built from the thesis, one model call, sourced facts only. It fills the company snapshot from public sources and produces the first thesis fit, marked as coming from public sources.
+2. **Deck** (optional). Upload the PDF for claim-level scoring. Image-only pages are transcribed by the vision model, so exported-as-images decks work. The deck overrides the public snapshot where it states something and rescoring uses the deck's claims.
+3. **Thesis fit and five questions.**
+4. **Your decision**: PASS, WATCH, DILIGENCE, with a rationale. Append-only.
+5. **Agent check**: one real OpenClaw research run, returned as evidence with a source URL and a Before / New evidence / After diff. The decision never changes by itself.
+
+The step indicator at the top of the Decision Room shows where a company is.
+
 ## Public research (Brave, not OpenClaw)
 
 The Decision Room has a Public research panel. It runs two or three Brave web searches built from the company name, website domain, and your brief, deduplicates the results, and makes one OpenAI call that may only cite URLs from those results. Facts citing anything else are dropped and counted. Kept facts are stored as `WEB` evidence rows, linked to a deck claim when the model names one, and if a thesis assessment already exists the company is rescored and the same Before / New evidence / After diff is shown.

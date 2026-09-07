@@ -19,7 +19,7 @@ Rules:
 - Prioritise facts that speak to the thesis: founders' firsthand domain experience, the workflow being automated and who suffers it, the buyer, customers or pilots or revenue, proprietary data or integration, sector, stage, geography, funding, competitors, risks.
 - `confidence`: HIGH = first-party page or reputable press with specifics; MEDIUM = directories, aggregators, profiles; LOW = inference from a thin snippet.
 - `claim_id`: if the fact bears on one of the listed deck claims, give that claim id and a `relation` (SUPPORTS, CONTRADICTS, QUALIFIES). Otherwise both null.
-- `snapshot`: fill each profile field only from the results; null when they do not say. `founders` lists names with role and firsthand domain background if stated.
+- `snapshot`: fill each profile field only from the results; null when they do not say. `founders` lists names with role and firsthand domain background if stated. `stage` is a short label only ("pre-seed", "seed", "series A", "later"); `geography` is "City, Country" or "Country", no sentences.
 - `unknowns`: what the brief asked for that the results do not answer.
 - `summary`: at most 100 words. Say what is established and what is not. No hype.
 - If the results contain nothing usable, return an empty `facts` list, a null-filled snapshot, and say so in `summary`.

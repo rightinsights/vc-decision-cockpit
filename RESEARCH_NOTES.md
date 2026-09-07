@@ -47,6 +47,14 @@ Observed and fixed: criteria the new evidence never touched drifted between resc
 
 Cost note: a trivial OpenClaw call reports about 24K prompt tokens, so each agent run carries the box's full system prompt. One run per demo is fine; casual clicking is not.
 
+## Image-only decks
+
+A one-page investor overview exported as a tall image (2377 x 13564 points, 22 embedded images) carried 24 characters of live text: "Pre-Seed | $2M | ElevenLabs". The extractor named the company ElevenLabs. Fix: pages with under 40 characters of extractable text are rendered (tall pages tiled at 1800 px), transcribed by the vision model, and stored with an `ocr` flag; the document records how many pages were transcribed. Rerun on that deck: 1 page transcribed in about two minutes, 10 claims with the right company, five deck-specific questions.
+
+## Research-first flow
+
+Users expect a company created from a name and website to populate itself. Research now runs automatically on creation, fills the snapshot from public sources (labelled as such), and produces the first thesis fit with coverage shown. The deck, when added, overrides fields it states and rescoring uses its claims. Observed on Jimini Health: initial fit WATCH 61 from 12 sourced facts, then WATCH 60 after the deck with claims attached.
+
 ## Still open
 
 - Replit import and publish: needs the GitHub push.

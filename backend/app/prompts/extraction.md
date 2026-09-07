@@ -12,7 +12,7 @@ Rules:
 - `evidence_strength`: LOW = bare assertion; MEDIUM = some substantiation inside the deck (named customers, quotes, concrete numbers); HIGH = specific, externally verifiable evidence (named paying customers with figures, signed contracts, audited metrics).
 - `missing_proof`: what an investor would need to see to verify the claim (for example "usage logs", "signed pilot contracts", "before/after time study"). Null only if nothing further is needed.
 - Founders: name, role, and `domain_background` describing firsthand experience with the workflow, or null if the deck says nothing.
-- `stage` is one of pre-seed, seed, series A, or the deck's own wording. `geography` is the HQ country/region if stated.
+- `stage` is a short label only: "pre-seed", "seed", "series A", or "later". `geography` is "City, Country" or "Country" only, no sentences.
 - Keep every string concise and factual. No commentary.
 
 ## User
