@@ -66,10 +66,13 @@ def test_mock_agent_check_creates_event_evidence_and_reassessment(client, deck_p
     assert body["matters"] is True
     assert "remains WATCH" in body["explanation"]
 
-    # the reassessment prompt saw the agent finding as new evidence
-    second_assessment_call = [v for name, v in fake.calls if name == "assessment"][1]
+    # the reassessment prompt saw the agent finding as new evidence and the previous scores to hold steady
+    assessment_calls = [v for name, v in fake.calls if name == "assessment"]
+    assert assessment_calls[0]["previous_scores"] == "none, first assessment"
+    second_assessment_call = assessment_calls[1]
     assert "AGENT FINDING" in second_assessment_call["extra_context"]
     assert "example.com" in second_assessment_call["claims_block"]
+    assert '"customer_evidence"' in second_assessment_call["previous_scores"] and '"score": 2' in second_assessment_call["previous_scores"]
 
     # human decision untouched, assessment appended not replaced
     assert [d["decision"] for d in client.get(f"/companies/{cid}/decisions").json()] == ["WATCH"]

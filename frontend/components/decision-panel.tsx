@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { Decision, Verdict } from "@/lib/types";
-import { VERDICT_COLOR, VERDICT_LABEL, formatDate } from "@/lib/format";
+import { VERDICT_COLOR, formatDate } from "@/lib/format";
 import { VerdictMark } from "./status-mark";
 
 const OPTIONS: Verdict[] = ["PASS", "WATCH", "DILIGENCE"];
@@ -37,7 +37,32 @@ export function DecisionPanel({ companyId, current, history, recommendation, dis
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
+      <div className="rounded-md bg-muted px-5 py-4">
+        <div className="rail-label mb-2">Current decision</div>
+        <VerdictMark value={current?.decision ?? null} size="lg" muted />
+        {current ? (
+          <>
+            <p className="mt-3 text-[15px] leading-snug">{current.rationale}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{formatDate(current.created_at)}</p>
+          </>
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground">No decision recorded. Earlier decisions stay visible once you add one.</p>
+        )}
+        {history.length > 1 && (
+          <ul className="mt-4 space-y-1.5 border-t border-border pt-3 text-xs text-muted-foreground">
+            {history.slice(1, 4).map((d) => (
+              <li key={d.id}>
+                <span className="font-bold text-foreground">{d.decision}</span>, {formatDate(d.created_at, false)}. {d.rationale}
+              </li>
+            ))}
+          </ul>
+        )}
+        <Link href={`/companies/${companyId}/changes`} className="mt-4 inline-block text-sm font-bold underline underline-offset-4">
+          Open decision history →
+        </Link>
+      </div>
+
       <div>
         <div className="flex flex-wrap gap-2">
           {OPTIONS.map((option) => {
@@ -49,59 +74,36 @@ export function DecisionPanel({ companyId, current, history, recommendation, dis
                 disabled={disabled}
                 onClick={() => setChoice(option)}
                 aria-pressed={active}
-                className="rounded-md border px-4 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+                className="rounded-md border-2 px-5 py-2 text-sm font-bold uppercase tracking-wider transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
                 style={{
                   borderColor: VERDICT_COLOR[option],
                   background: active ? VERDICT_COLOR[option] : "transparent",
                   color: active ? "#fff" : VERDICT_COLOR[option],
                 }}
               >
-                {VERDICT_LABEL[option]}
-                {recommendation === option && <span className="ml-1.5 text-xs font-normal opacity-80">(AI)</span>}
+                {option}
+                {recommendation === option && <span className="ml-1.5 text-[10px] font-semibold opacity-80">AI</span>}
               </button>
             );
           })}
         </div>
+        <label htmlFor="rationale" className="rail-label mt-4 block">Decision rationale</label>
         <Textarea
-          className="mt-3 min-h-[88px] bg-card"
-          placeholder="Short rationale. Required."
+          id="rationale"
+          className="mt-1 min-h-[96px] bg-card text-[15px]"
+          placeholder="What evidence drove your decision?"
           value={rationale}
           onChange={(e) => setRationale(e.target.value)}
           disabled={disabled}
         />
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-3 flex items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
-            {disabled ? "Run the analysis before recording a decision." : "Your decision is recorded as a new entry. Earlier decisions stay visible."}
+            {disabled ? "Run the analysis before recording a decision." : "Recorded as a new entry. The AI never changes it."}
           </p>
-          <Button onClick={record} disabled={disabled || busy || !choice || rationale.trim().length < 3}>
-            {busy ? "Recording" : "Record decision"}
+          <Button className="font-bold" onClick={record} disabled={disabled || busy || !choice || rationale.trim().length < 3}>
+            {busy ? "Recording" : choice ? `Record ${choice}` : "Record decision"}
           </Button>
         </div>
-      </div>
-
-      <div className="border-l border-border pl-6">
-        <div className="rail-label">Current human decision</div>
-        <div className="mt-1"><VerdictMark value={current?.decision ?? null} size="lg" /></div>
-        {current ? (
-          <>
-            <p className="mt-1 text-sm">{current.rationale}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{formatDate(current.created_at)}</p>
-          </>
-        ) : (
-          <p className="mt-1 text-sm text-muted-foreground">No decision recorded.</p>
-        )}
-        {history.length > 1 && (
-          <ul className="mt-4 space-y-1.5 border-t border-border pt-3 text-xs text-muted-foreground">
-            {history.slice(1, 4).map((d) => (
-              <li key={d.id}>
-                <span className="font-medium text-foreground">{VERDICT_LABEL[d.decision]}</span>, {formatDate(d.created_at, false)}. {d.rationale}
-              </li>
-            ))}
-          </ul>
-        )}
-        <Link href={`/companies/${companyId}/changes`} className="mt-4 inline-block text-xs font-medium underline underline-offset-2">
-          Open what changed
-        </Link>
       </div>
     </div>
   );

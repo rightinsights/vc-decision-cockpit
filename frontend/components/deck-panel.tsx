@@ -9,7 +9,7 @@ import { Progress } from "./notice";
 interface Props {
   document: DocumentInfo | null;
   hasAnalysis: boolean;
-  busy: string | null; // label of the step in flight, or null
+  busy: string | null;
   onUpload: (file: File) => Promise<unknown>;
   onAnalyze: () => Promise<unknown>;
   onQuestions: () => Promise<unknown>;
@@ -22,48 +22,42 @@ export function DeckPanel({ document, hasAnalysis, busy, onUpload, onAnalyze, on
 
   if (busy) {
     return (
-      <div className="border border-border bg-card px-5 py-4">
+      <div className="panel-soft px-6 py-5">
         <Progress label={busy} />
       </div>
     );
   }
 
-  if (!document) {
-    return (
-      <div className="border border-dashed border-border bg-card px-5 py-6">
-        <p className="text-base">Upload the pitch deck to start.</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          PDF only, up to 25 MB. Text is read page by page so every claim can cite its slide.
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <input
-            ref={input}
-            type="file"
-            accept="application/pdf"
-            className="text-sm file:mr-3 file:rounded-md file:border file:border-border file:bg-background file:px-2.5 file:py-1 file:text-sm hover:file:bg-muted"
-            onChange={(e) => setSelected(e.target.files?.[0] ?? null)}
-          />
-          <Button disabled={!selected} onClick={() => selected && onUpload(selected)}>Upload deck</Button>
+  return (
+    <div className="panel-soft flex flex-wrap items-center justify-between gap-4 px-6 py-4">
+      <div className="flex items-center gap-4">
+        <span className="flex size-11 items-center justify-center rounded-md text-[11px] font-bold text-white" style={{ background: "var(--pass)" }}>PDF</span>
+        <div>
+          <div className="text-[15px] font-bold">{document ? document.file_name : "Pitch deck"}</div>
+          <div className="text-sm text-muted-foreground">
+            {document
+              ? `${document.page_count} pages, text extracted with slide references, uploaded ${formatDate(document.created_at)}`
+              : "Upload a public or non-confidential PDF, up to 25 MB. Every claim will cite its slide."}
+          </div>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border border-border bg-card px-5 py-3 text-sm">
-      <div>
-        <span className="font-medium">{document.file_name}</span>
-        <span className="text-muted-foreground">
-          {"  "}{document.page_count} pages, uploaded {formatDate(document.created_at)}
-        </span>
-      </div>
-      <div className="flex items-center gap-2">
-        {hasAnalysis && questionsMissing && (
-          <Button variant="outline" onClick={onQuestions}>Generate five questions</Button>
-        )}
-        <Button variant={hasAnalysis ? "outline" : "default"} onClick={onAnalyze}>
-          {hasAnalysis ? "Run analysis again" : "Run analysis"}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          ref={input}
+          type="file"
+          accept="application/pdf"
+          className="text-sm file:mr-3 file:rounded-md file:border file:border-border file:bg-card file:px-3 file:py-1.5 file:text-sm file:font-semibold hover:file:bg-muted"
+          onChange={(e) => setSelected(e.target.files?.[0] ?? null)}
+        />
+        <Button variant="outline" className="font-bold" disabled={!selected} onClick={() => selected && onUpload(selected)}>
+          {document ? "Replace deck" : "Upload deck"}
         </Button>
+        {document && hasAnalysis && questionsMissing && (
+          <Button variant="outline" className="font-bold" onClick={onQuestions}>Generate five questions</Button>
+        )}
+        {document && (
+          <Button className="font-bold" onClick={onAnalyze}>{hasAnalysis ? "Run fresh analysis" : "Analyze deck"}</Button>
+        )}
       </div>
     </div>
   );

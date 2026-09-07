@@ -28,17 +28,17 @@ export function FounderUpdate({ enabled, busy, onAnalyze }: Props) {
     <div className="space-y-5">
       <div>
         <Textarea
-          className="min-h-[96px] bg-card"
+          className="min-h-[104px] bg-card text-[15px]"
           placeholder="Paste founder meeting notes or an update. Example: Founder says both pilots are paid, $30K and $50K, and both plan to expand if the first deployment works."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           disabled={!enabled || busy}
         />
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-3 flex items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
             {enabled ? "New facts become evidence, the thesis is rescored, and you see only what moved." : "Run the analysis first."}
           </p>
-          <Button variant="outline" onClick={analyze} disabled={!enabled || busy || notes.trim().length < 10}>Analyze update</Button>
+          <Button variant="outline" className="font-bold" onClick={analyze} disabled={!enabled || busy || notes.trim().length < 10}>Analyze update</Button>
         </div>
       </div>
       {result && <ReassessmentView result={result} />}

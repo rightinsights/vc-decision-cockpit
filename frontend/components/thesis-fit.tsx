@@ -1,21 +1,14 @@
 import type { Assessment, Criterion } from "@/lib/types";
+import { cleanReason } from "@/lib/format";
 import { Score, VerdictMark } from "./status-mark";
 
-function Pips({ score }: { score: number | null }) {
+function Track({ score }: { score: number | null }) {
+  const pct = score === null ? 0 : (score / 5) * 100;
+  const color = score === null ? "var(--muted)" : score >= 4 ? "var(--diligence)" : score >= 3 ? "var(--watch)" : "var(--pass)";
   return (
-    <span className="inline-flex gap-[3px]" aria-label={score === null ? "no data" : `${score} of 5`}>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <span
-          key={n}
-          className="h-2.5 w-3 rounded-[1px]"
-          style={{
-            background: score !== null && n <= score ? "var(--foreground)" : "transparent",
-            border: `1px solid ${score === null ? "var(--border)" : "var(--foreground)"}`,
-            opacity: score !== null && n <= score ? 1 : 0.45,
-          }}
-        />
-      ))}
-    </span>
+    <div className="h-2 w-full overflow-hidden rounded-full bg-muted" aria-label={score === null ? "no data" : `${score} of 5`}>
+      <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+    </div>
   );
 }
 
@@ -25,14 +18,14 @@ export function ThesisFit({ assessment, criteria }: { assessment: Assessment | n
   }
   return (
     <div>
-      <div className="mb-3 flex items-end justify-between">
+      <div className="mb-4 flex items-end justify-between rounded-md bg-muted px-4 py-3">
         <div>
-          <div className="rail-label">AI recommendation</div>
-          <div className="mt-0.5"><VerdictMark value={assessment.recommendation} /></div>
+          <div className="rail-label mb-1">Recommendation</div>
+          <VerdictMark value={assessment.recommendation} size="lg" />
         </div>
         <div className="text-right">
           <div className="rail-label">Score</div>
-          <Score value={assessment.overall_score} small />
+          <Score value={assessment.overall_score} />
           {assessment.used_weight < 100 && (
             <div className="text-[11px] text-muted-foreground">on {assessment.used_weight} of 100 weight</div>
           )}
@@ -42,24 +35,22 @@ export function ThesisFit({ assessment, criteria }: { assessment: Assessment | n
         {criteria.map((c) => {
           const item = assessment.criterion_scores[c.key];
           return (
-            <li key={c.key} className="border-t border-border py-2">
+            <li key={c.key} className="border-t border-border py-3">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-sm">{c.label}</span>
-                <span className="flex items-center gap-2">
-                  <Pips score={item?.score ?? null} />
-                  <span className="w-4 text-right text-xs tabular-nums text-muted-foreground">{item?.score ?? "–"}</span>
-                </span>
+                <span className="text-[15px] font-semibold">{c.label}</span>
+                <span className="display text-xl tabular-nums">{item?.score ?? "?"}<span className="text-xs font-normal text-muted-foreground">/5</span></span>
               </div>
-              {item?.reason && <p className="mt-1 text-xs leading-snug text-muted-foreground">{item.reason}</p>}
+              <div className="mt-1.5"><Track score={item?.score ?? null} /></div>
+              {item?.reason && <p className="mt-1.5 text-sm leading-snug text-muted-foreground">{cleanReason(item.reason)}</p>}
             </li>
           );
         })}
       </ul>
-      <div className="mt-3 border-t border-border pt-3 text-sm">
-        <div className="rail-label">Main concern</div>
-        <p className="mt-0.5 leading-snug">{assessment.main_concern}</p>
+      <div className="mt-4 rounded-md px-4 py-3" style={{ background: "color-mix(in oklch, var(--orange) 10%, white)", border: "1px solid color-mix(in oklch, var(--orange) 40%, transparent)" }}>
+        <div className="rail-label" style={{ color: "var(--orange)" }}>Main concern</div>
+        <p className="mt-1 text-[15px] font-semibold leading-snug">{assessment.main_concern}</p>
       </div>
-      {assessment.summary && <p className="mt-3 text-xs leading-snug text-muted-foreground">{assessment.summary}</p>}
+      {assessment.summary && <p className="mt-3 text-sm leading-snug text-muted-foreground">{assessment.summary}</p>}
     </div>
   );
 }

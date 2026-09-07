@@ -50,6 +50,17 @@ export function domainOf(url: string | null): string {
   }
 }
 
+/** Model reasons occasionally leak machine evidence ids; keep the prose readable. */
+export function cleanReason(text: string | null | undefined): string {
+  if (!text) return "";
+  return text
+    .replace(/\(?\bev:[0-9a-f]{32}\b(?:[,;]\s*ev:[0-9a-f]{32}\b)*\)?/g, "")
+    .replace(/\(\s*\)/g, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([.,;])/g, "$1")
+    .trim();
+}
+
 const CATEGORY_LABEL: Record<string, string> = { roi: "ROI", business_model: "Business model" };
 
 export function titleCase(value: string): string {

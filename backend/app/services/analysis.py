@@ -140,6 +140,11 @@ def run_assessment(
     db: Session, company: Company, llm: LLMClient, *, trigger: str, source_ref_id: str | None, extra_context: str | None,
 ) -> Assessment:
     thesis = get_thesis(db)
+    previous = latest_assessment(db, company.id) if trigger != "DECK" else None
+    previous_scores = (
+        json.dumps({k: {"score": v.get("score"), "reason": v.get("reason")} for k, v in previous.criterion_scores_json.items()}, indent=1)
+        if previous else "none, first assessment"
+    )
     output = llm.parse(
         "assessment",
         {
@@ -149,6 +154,7 @@ def run_assessment(
             "criteria": criteria_block(),
             "snapshot": snapshot_json(company),
             "claims_block": claims_block(db, company.id),
+            "previous_scores": previous_scores,
             "extra_context": extra_context or "none",
         },
         AssessmentOutput,

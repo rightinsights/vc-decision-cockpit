@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ErrorNotice } from "@/components/notice";
-import { VerdictMark } from "@/components/status-mark";
+import { ScoreTile, VerdictMark } from "@/components/status-mark";
 import { Timeline } from "@/components/timeline";
+import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
 import type { Analysis, ChangeEntry } from "@/lib/types";
 
@@ -32,7 +33,7 @@ export default function ChangesPage() {
   }, [id]);
 
   if (error) return <ErrorNotice message={error} />;
-  if (!analysis || !entries) return <p className="text-sm text-muted-foreground">Loading</p>;
+  if (!analysis || !entries) return <p className="text-sm text-muted-foreground">Building decision history</p>;
 
   const reassessments = entries.filter((e) => e.kind === "ASSESSMENT" && e.recommendation_before !== null).length;
 
@@ -40,24 +41,40 @@ export default function ChangesPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-6">
         <div>
-          <Link href={`/companies/${id}`} className="text-xs text-muted-foreground hover:text-foreground">{analysis.company.name}</Link>
-          <h1 className="mt-1 text-3xl font-medium tracking-tight">What changed</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {entries.length} entries, {reassessments} {reassessments === 1 ? "reassessment" : "reassessments"}. Oldest first.
+          <p className="text-xs text-muted-foreground">
+            <Link href="/" className="hover:text-foreground">Pipeline</Link> <span className="mx-1">/</span>
+            <Link href={`/companies/${id}`} className="hover:text-foreground">{analysis.company.name}</Link> <span className="mx-1">/</span> What changed
+          </p>
+          <p className="eyebrow mt-3 mb-1">Decision history</p>
+          <h1 className="display text-[56px]">What changed?</h1>
+          <p className="mt-2 text-[17px] text-muted-foreground">
+            New evidence can change the AI view. Your decision stays yours. {entries.length} entries, {reassessments} {reassessments === 1 ? "reassessment" : "reassessments"}, oldest first.
           </p>
         </div>
-        <div className="flex gap-10 text-right">
-          <div>
-            <div className="rail-label">AI recommendation now</div>
-            <div className="mt-1"><VerdictMark value={analysis.assessment?.recommendation ?? null} size="lg" /></div>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="rail-label mb-1">AI view now</div>
+            <VerdictMark value={analysis.assessment?.recommendation ?? null} size="lg" muted />
           </div>
-          <div>
-            <div className="rail-label">Human decision now</div>
-            <div className="mt-1"><VerdictMark value={analysis.decision?.decision ?? null} size="lg" muted /></div>
+          <div className="text-right">
+            <div className="rail-label mb-1">Your decision</div>
+            <VerdictMark value={analysis.decision?.decision ?? null} size="lg" muted />
           </div>
+          <ScoreTile value={analysis.assessment?.overall_score ?? null} />
+          <Link href={`/companies/${id}`}><Button variant="outline" className="h-10 font-bold">← Decision room</Button></Link>
         </div>
       </div>
-      <Timeline entries={entries} />
+
+      <section className="panel">
+        <div className="mb-6 flex items-center justify-between rounded-md bg-muted px-5 py-3">
+          <div className="flex items-center gap-3">
+            <span className="rail-label">Current human decision</span>
+            <VerdictMark value={analysis.decision?.decision ?? null} muted />
+          </div>
+          <p className="text-sm text-muted-foreground">{analysis.decision?.rationale ?? "No human decision has been recorded."}</p>
+        </div>
+        <Timeline entries={entries} />
+      </section>
     </div>
   );
 }

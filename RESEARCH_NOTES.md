@@ -30,8 +30,24 @@ Sources consulted while building, and the implementation problems actually hit. 
 
 - **Search routing.** A parallel build routed all web research through OpenClaw, which runs the box's own model for every query. Decision: the app calls Brave directly and uses one OpenAI call to turn results into sourced facts; every fact must cite a URL Brave returned or it is dropped. OpenClaw is used only for the one required agent check.
 
+## Demo deck provenance
+
+No thesis-fit seed deck exists anywhere public as a downloadable PDF: every deck library serves slide images or view-only Google Drive files with download disabled. The demo uses **Oii.ai** (AI supply-chain digital twin, seed 2023, founders ex-GSK supply chain and ex-Intel chief data scientist). TechCrunch published 7 of its 21 slides as images with the company's consent (https://techcrunch.com/2023/06/02/sample-seed-pitch-deck-oii-ai/). `backend/scripts/build_public_deck_oii.py` downloads those 7 public slides, transcribes each with the vision model, and writes a text-searchable PDF (`backend/data/demo/oii-ai-seed-deck-2023-techcrunch.pdf`) with the source URL printed on every page. The view-only Drive copy was deliberately not scraped.
+
+## Real run, 2026-09-06
+
+| Step | Provider | Time | Result |
+|---|---|---|---|
+| Deck analysis | OpenAI gpt-5-mini | 76 s | 7 claims with slide refs, score 38, PASS. Main concern: no customers, no quantified ROI, no buyer. |
+| Five questions | OpenAI | 42 s | Company-specific (pilot list, before/after data, buyer title, sandbox demo, patent numbers). |
+| Public research | Brave + OpenAI | 77 s | 20 results, 18 domains, 11 facts kept, 0 dropped. Rescored 38 to 50, PASS to WATCH. |
+| Agent check | OpenClaw (real) | 106 s | Found a 2026 Logistics Tech Outlook profile with a named UK deployment (18,500 SKUs, 7 ERPs). Source URL resolves. Customer evidence 2 to 4. Recommendation stayed WATCH. Human decision untouched. |
+
+Observed and fixed: criteria the new evidence never touched drifted between rescoring runs (founder fit 4 to 5 to 4). The assessment prompt now receives the previous scores and is told to hold untouched criteria identical. Also fixed: reasons leaked machine evidence ids; the prompt now cites sources by name and the UI strips any stragglers.
+
+Cost note: a trivial OpenClaw call reports about 24K prompt tokens, so each agent run carries the box's full system prompt. One run per demo is fine; casual clicking is not.
+
 ## Still open
 
-- Real OpenClaw run end to end: needs the gateway URL, token, the chat-completions endpoint enabled on the box, a search provider key on the box, and a network path from the app to the gateway.
-- Real OpenAI extraction on a public deck: needs a valid key.
 - Replit import and publish: needs the GitHub push.
+- Replit reach to the OpenClaw gateway needs a public HTTPS path (Tailscale Funnel or a TLS proxy) since the box is loopback-only behind an SSH tunnel today.

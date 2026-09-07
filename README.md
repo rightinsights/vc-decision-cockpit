@@ -109,9 +109,13 @@ The app sends the agent the company name, website, current concern, open evidenc
 
 Uploaded PDFs are stored on the deployment filesystem and will not survive a republish; the extracted page text lives in the database, so analysis history is kept.
 
+## Demo deck
+
+`backend/data/demo/oii-ai-seed-deck-2023-techcrunch.pdf` is built by `backend/scripts/build_public_deck_oii.py` from the 7 Oii.ai slides TechCrunch published with the company's consent, transcribed with the vision model so every claim can cite a slide. See `RESEARCH_NOTES.md` for provenance and the recorded real run.
+
 ## Demo script
 
-1. Pipeline, add company, upload a public deck, run analysis.
+1. Pipeline, add company (Oii.ai, https://oii.ai, seed, United States), upload the demo deck, run analysis.
 2. Decision Room: point at one claim, its slide, and its dashed missing-proof cell.
 3. Thesis fit in the left rail, score secondary to the criteria.
 4. Five questions with strong and weak answers.

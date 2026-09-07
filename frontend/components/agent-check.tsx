@@ -39,12 +39,16 @@ export function AgentCheck({ decision, assessment, events, busy, onRun }: Props)
 
   return (
     <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-forest px-4 py-2.5 text-paper">
+        <span className="text-[12px] font-bold uppercase tracking-[0.14em]">App → OpenClaw → web → sourced finding → app</span>
+        <span className="text-xs opacity-80">{eligible ? "Ready" : "Record WATCH or DILIGENCE to enable"}</span>
+      </div>
       <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <label htmlFor="agent-question" className="rail-label">Investment question the agent should answer</label>
           <Textarea
             id="agent-question"
-            className="mt-1 min-h-[64px] bg-card"
+            className="mt-1 min-h-[72px] bg-card text-[15px]"
             placeholder={defaultQuestion || "Run the analysis first."}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -52,11 +56,11 @@ export function AgentCheck({ decision, assessment, events, busy, onRun }: Props)
           />
           <p className="mt-1 text-xs text-muted-foreground">
             {eligible
-              ? "Leave blank to use the question above. The agent researches the web and returns one sourced finding. It never changes your decision."
-              : "Record WATCH or DILIGENCE to enable the agent. Passed companies are not monitored."}
+              ? "Leave blank to use the question above. The agent returns one sourced finding. It never changes your decision."
+              : "Passed companies are not monitored."}
           </p>
         </div>
-        <Button onClick={run} disabled={!eligible || busy}>Run agent check</Button>
+        <Button className="h-10 px-5 font-bold" onClick={run} disabled={!eligible || busy}>✦ Run agent check</Button>
       </div>
 
       {result && <ReassessmentView result={result} />}
@@ -64,17 +68,17 @@ export function AgentCheck({ decision, assessment, events, busy, onRun }: Props)
       {events.length > 0 && (
         <div>
           <div className="rail-label mb-2">Earlier agent checks</div>
-          <ul className="divide-y divide-border border-y border-border text-sm">
+          <ul className="divide-y divide-border rounded-md border border-border text-sm">
             {events.map((e) => (
-              <li key={e.id} className="grid gap-1 py-2 sm:grid-cols-[150px_1fr]">
+              <li key={e.id} className="grid gap-1 px-4 py-2.5 sm:grid-cols-[150px_1fr]">
                 <span className="text-xs text-muted-foreground">{formatDate(e.created_at)}</span>
                 <div>
                   <span className={e.event_found ? "" : "text-muted-foreground"}>
                     {e.event_found ? e.summary : `Nothing material for: ${e.investment_question}`}
                   </span>
                   {e.source_url && (
-                    <a href={e.source_url} target="_blank" rel="noreferrer" className="ml-2 text-xs underline underline-offset-2">
-                      {host(e.source_url)}
+                    <a href={e.source_url} target="_blank" rel="noreferrer" className="ml-2 text-xs font-bold underline underline-offset-2">
+                      {host(e.source_url)} ↗
                     </a>
                   )}
                 </div>

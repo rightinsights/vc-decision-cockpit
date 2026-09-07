@@ -8,9 +8,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-plex-sans), "IBM Plex Sans", system-ui, sans-serif;
-  --font-serif: var(--font-plex-serif), "IBM Plex Serif", Georgia, serif;
+  --font-serif: var(--font-display), "Playfair Display", Georgia, serif;
   --font-mono: var(--font-plex-sans), system-ui, sans-serif;
-  --font-heading: var(--font-plex-sans), "IBM Plex Sans", system-ui, sans-serif;
+  --font-heading: var(--font-display), "Playfair Display", Georgia, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -45,6 +45,9 @@
   --color-diligence: var(--diligence);
   --color-qualifies: var(--qualifies);
   --color-paper: var(--paper);
+  --color-forest: var(--forest);
+  --color-forest-2: var(--forest-2);
+  --color-orange: var(--orange);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -54,45 +57,48 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Inspection-ledger palette: cool drafting-paper ground, slate ink, semantic color only for verdicts. */
+/* Editorial dealflow palette: cream ground, forest green chrome, orange accent, serif display type. */
 :root {
-  --paper: #f4f5f1;
-  --background: #f4f5f1;
-  --foreground: #1e2a32;
+  --paper: #f5f2eb;
+  --background: #f5f2eb;
+  --foreground: #14211c;
   --card: #ffffff;
-  --card-foreground: #1e2a32;
+  --card-foreground: #14211c;
   --popover: #ffffff;
-  --popover-foreground: #1e2a32;
-  --primary: #1e2a32;
-  --primary-foreground: #f8f9f6;
-  --secondary: #e8ebe6;
-  --secondary-foreground: #1e2a32;
-  --muted: #eceee9;
-  --muted-foreground: #5b6770;
-  --accent: #e8ebe6;
-  --accent-foreground: #1e2a32;
-  --destructive: #b4432f;
-  --border: #d5dad6;
-  --input: #c9cfca;
-  --ring: #1d6f6a;
-  --pass: #b4432f;
-  --watch: #b07a0c;
-  --diligence: #1d6f6a;
-  --qualifies: #5b6770;
-  --chart-1: #1d6f6a;
-  --chart-2: #b07a0c;
-  --chart-3: #b4432f;
-  --chart-4: #5b6770;
-  --chart-5: #1e2a32;
-  --radius: 0.25rem;
+  --popover-foreground: #14211c;
+  --forest: #12302a;
+  --forest-2: #1b4a3f;
+  --orange: #e4732f;
+  --primary: #e4732f;
+  --primary-foreground: #ffffff;
+  --secondary: #ebe7dd;
+  --secondary-foreground: #14211c;
+  --muted: #efece4;
+  --muted-foreground: #5f6b66;
+  --accent: #ebe7dd;
+  --accent-foreground: #14211c;
+  --destructive: #b43a2a;
+  --border: #d9d6cc;
+  --input: #c9c5b8;
+  --ring: #1b4a3f;
+  --pass: #b43a2a;
+  --watch: #c28b12;
+  --diligence: #1e6f5c;
+  --qualifies: #5f6b66;
+  --chart-1: #1e6f5c;
+  --chart-2: #c28b12;
+  --chart-3: #b43a2a;
+  --chart-4: #5f6b66;
+  --chart-5: #12302a;
+  --radius: 0.375rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #1e2a32;
-  --sidebar-primary: #1e2a32;
-  --sidebar-primary-foreground: #f8f9f6;
-  --sidebar-accent: #eceee9;
-  --sidebar-accent-foreground: #1e2a32;
-  --sidebar-border: #d5dad6;
-  --sidebar-ring: #1d6f6a;
+  --sidebar-foreground: #14211c;
+  --sidebar-primary: #12302a;
+  --sidebar-primary-foreground: #f5f2eb;
+  --sidebar-accent: #efece4;
+  --sidebar-accent-foreground: #14211c;
+  --sidebar-border: #d9d6cc;
+  --sidebar-ring: #1b4a3f;
 }
 
 @layer base {
@@ -104,32 +110,91 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-size: 15px;
     font-feature-settings: "tnum" 1, "kern" 1;
     -webkit-font-smoothing: antialiased;
   }
   ::selection {
-    background: color-mix(in oklch, var(--diligence) 25%, transparent);
+    background: color-mix(in oklch, var(--orange) 30%, transparent);
   }
 }
 
 @layer components {
-  /* A visible hole in the case file: what has not been proven yet. */
+  .display {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .eyebrow {
+    color: var(--orange);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--forest);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .panel-soft {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .stat-tile {
+    background: var(--forest);
+    color: var(--paper);
+  }
+  .stat-tile + .stat-tile {
+    border-left: 1px solid color-mix(in oklch, var(--paper) 18%, transparent);
+  }
+  .table-head {
+    background: var(--muted);
+    color: var(--muted-foreground);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
   .ledger-gap {
-    border: 1px dashed color-mix(in oklch, var(--muted-foreground) 60%, transparent);
-    background: color-mix(in oklch, var(--paper) 60%, transparent);
+    border: 1px dashed color-mix(in oklch, var(--orange) 70%, transparent);
+    background: color-mix(in oklch, var(--orange) 7%, transparent);
   }
   .claim-text {
     font-family: var(--font-serif);
-    font-size: 0.97rem;
-    line-height: 1.45;
+    font-size: 1.05rem;
+    line-height: 1.4;
+    font-weight: 500;
   }
   .rail-label {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--muted-foreground);
     line-height: 1.2;
   }
+  .badge-verdict {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  .badge-empty {
+    background: var(--muted);
+    color: var(--muted-foreground);
+  }
   .progress-sweep {
-    background: linear-gradient(90deg, transparent 0%, var(--diligence) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, var(--orange) 50%, transparent 100%);
     background-size: 40% 100%;
     animation: sweep 1.4s linear infinite;
   }
@@ -138,6 +203,6 @@
     to { background-position: 140% 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .progress-sweep { animation: none; background: var(--diligence); opacity: 0.5; }
+    .progress-sweep { animation: none; background: var(--orange); opacity: 0.5; }
   }
 }

@@ -12,8 +12,9 @@ import { ErrorNotice, SectionTitle } from "@/components/notice";
 import { QuestionList } from "@/components/questions";
 import { ResearchPanel } from "@/components/research-panel";
 import { SnapshotRail } from "@/components/snapshot";
-import { Score, VerdictMark } from "@/components/status-mark";
+import { ScoreTile, VerdictMark } from "@/components/status-mark";
 import { ThesisFit } from "@/components/thesis-fit";
+import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
 import { domainOf } from "@/lib/format";
 import type { Analysis, Decision, Reassessment, Research, Verdict } from "@/lib/types";
@@ -67,18 +68,13 @@ export default function DecisionRoomPage() {
     }
   }
 
-  const runAgent = (question: string | undefined): Promise<Reassessment | null> =>
-    run(STEP_AGENT, () => api.agentCheck(id, question));
-
-  const runResearch = (brief: string | undefined): Promise<Research | null> =>
-    run(STEP_RESEARCH, () => api.research(id, brief));
-
+  const runAgent = (question: string | undefined): Promise<Reassessment | null> => run(STEP_AGENT, () => api.agentCheck(id, question));
+  const runResearch = (brief: string | undefined): Promise<Research | null> => run(STEP_RESEARCH, () => api.research(id, brief));
   const analyzeNotes = (notes: string): Promise<Reassessment | null> =>
     run(STEP_NOTES, async () => {
       const note = await api.founderNote(id, notes);
       return api.reassess(id, note.id);
     });
-
   const analyzeThenQuestions = () =>
     run(STEP_ANALYZE, async () => {
       await api.analyze(id);
@@ -90,43 +86,44 @@ export default function DecisionRoomPage() {
     return (
       <div className="space-y-4">
         <ErrorNotice message={error} />
-        {!error && <p className="text-sm text-muted-foreground">Loading</p>}
+        {!error && <p className="text-sm text-muted-foreground">Opening decision room</p>}
       </div>
     );
   }
 
   const { company, assessment, claims, questions, decision, snapshot, document, thesis, monitoring_events, research } = analysis;
+  const canRunAgent = decision !== null && (decision.decision === "WATCH" || decision.decision === "DILIGENCE");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-6">
         <div>
-          <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">Pipeline</Link>
-          <h1 className="mt-1 text-3xl font-medium tracking-tight">{company.name}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {[company.stage, company.geography].filter(Boolean).join(", ") || "Stage and geography not yet known"}
+          <p className="text-xs text-muted-foreground">
+            <Link href="/" className="hover:text-foreground">Pipeline</Link> <span className="mx-1">/</span> {company.name}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-4">
+            <h1 className="display text-[56px]">{company.name}</h1>
+            <VerdictMark value={decision?.decision ?? null} size="lg" muted />
+          </div>
+          <p className="mt-1 text-[17px] text-muted-foreground">
+            {company.stage ?? "Stage unknown"} <span className="mx-1">·</span> {company.geography ?? "Geography unknown"}
             {company.website && (
               <>
-                {"  "}
-                <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noreferrer" className="underline underline-offset-2">
-                  {domainOf(company.website)}
+                <span className="mx-1">·</span>
+                <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noreferrer" className="underline underline-offset-4">
+                  {domainOf(company.website)} ↗
                 </a>
               </>
             )}
           </p>
         </div>
-        <div className="flex gap-10 text-right">
-          <div>
-            <div className="rail-label">AI recommendation</div>
-            <div className="mt-1">
-              {assessment ? <VerdictMark value={assessment.recommendation} size="lg" /> : <span className="text-muted-foreground">Not analyzed</span>}
-            </div>
-            {assessment && <div className="mt-0.5 text-xs text-muted-foreground"><Score value={assessment.overall_score} small /></div>}
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="rail-label mb-1">AI view</div>
+            <VerdictMark value={assessment?.recommendation ?? null} size="lg" muted />
           </div>
-          <div>
-            <div className="rail-label">Human decision</div>
-            <div className="mt-1"><VerdictMark value={decision?.decision ?? null} size="lg" muted /></div>
-          </div>
+          <ScoreTile value={assessment?.overall_score ?? null} />
+          <Link href={`/companies/${id}/changes`}><Button variant="outline" className="h-10 font-bold">Decision history</Button></Link>
         </div>
       </div>
 
@@ -142,31 +139,26 @@ export default function DecisionRoomPage() {
         onQuestions={() => run(STEP_QUESTIONS, () => api.meetingQuestions(id))}
       />
 
-      <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[340px_1fr]">
         <aside className="space-y-8">
-          <section>
-            <h2 className="mb-2 text-sm font-medium">Snapshot</h2>
+          <section className="panel">
+            <SectionTitle eyebrow="Company snapshot">What the deck says</SectionTitle>
             <SnapshotRail snapshot={snapshot} />
           </section>
-          <section>
-            <h2 className="mb-2 text-sm font-medium">Thesis fit</h2>
+          <section className="panel">
+            <SectionTitle eyebrow="Thesis fit">Criterion scores</SectionTitle>
             <ThesisFit assessment={assessment} criteria={thesis.criteria} />
           </section>
         </aside>
 
-        <div className="min-w-0 space-y-10">
-          <section>
-            <SectionTitle aside="Brave search plus one model call, facts cite returned URLs only">Public research</SectionTitle>
-            <ResearchPanel research={research} busy={busy !== null} onRun={runResearch} />
-          </section>
-
-          <section>
-            <SectionTitle aside={claims.length ? `${claims.length} claims from the deck` : undefined}>Claims and evidence</SectionTitle>
+        <div className="min-w-0 space-y-8">
+          <section className="panel">
+            <SectionTitle eyebrow="Claim → evidence → gap" aside={claims.length ? `${claims.length} claims from the deck` : undefined}>Claims and evidence</SectionTitle>
             <ClaimsLedger claims={claims} />
           </section>
 
-          <section>
-            <SectionTitle aside={questions.length ? "Answers that could change the decision" : undefined}>Five diligence questions</SectionTitle>
+          <section className="panel">
+            <SectionTitle eyebrow="Exactly five" aside={questions.length ? "Answers that could change the decision" : undefined}>Questions that could change the decision</SectionTitle>
             <QuestionList
               questions={questions}
               criteria={thesis.criteria}
@@ -175,8 +167,8 @@ export default function DecisionRoomPage() {
             />
           </section>
 
-          <section>
-            <SectionTitle>Decision</SectionTitle>
+          <section className="panel">
+            <SectionTitle eyebrow="Human decision">AI recommends. You decide.</SectionTitle>
             <DecisionPanel
               companyId={id}
               current={decision}
@@ -189,13 +181,18 @@ export default function DecisionRoomPage() {
             />
           </section>
 
-          <section>
-            <SectionTitle aside="One real external research run, returned as evidence">Agent check</SectionTitle>
+          <section className="panel">
+            <SectionTitle eyebrow="Public research" aside="Brave search plus one model call. Facts cite returned URLs only.">Sourced public profile</SectionTitle>
+            <ResearchPanel research={research} busy={busy !== null} onRun={runResearch} />
+          </section>
+
+          <section className="panel" style={{ borderTopColor: canRunAgent ? "var(--orange)" : undefined }}>
+            <SectionTitle eyebrow="OpenClaw agent" aside="One real external research run, returned as evidence">Run agent check</SectionTitle>
             <AgentCheck decision={decision} assessment={assessment} events={monitoring_events} busy={busy !== null} onRun={runAgent} />
           </section>
 
-          <section>
-            <SectionTitle aside="Optional">Founder update</SectionTitle>
+          <section className="panel">
+            <SectionTitle eyebrow="Optional" aside="Paste notes, see only what moved">Founder update</SectionTitle>
             <FounderUpdate enabled={assessment !== null} busy={busy !== null} onAnalyze={analyzeNotes} />
           </section>
         </div>

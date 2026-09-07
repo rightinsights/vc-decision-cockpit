@@ -13,11 +13,11 @@ export function QuestionList({ questions, criteria, canGenerate, onGenerate }: P
 
   if (questions.length === 0) {
     return (
-      <div className="border border-dashed border-border px-5 py-8 text-center text-sm text-muted-foreground">
+      <div className="rounded-md border border-dashed border-border px-5 py-10 text-center text-muted-foreground">
         {canGenerate ? (
           <>
             <p>Five questions whose answers could change the decision.</p>
-            <Button className="mt-4" variant="outline" onClick={onGenerate}>Generate five questions</Button>
+            <Button className="mt-4 font-bold" onClick={onGenerate}>Generate five questions</Button>
           </>
         ) : (
           <p>Questions are generated from the analyzed claims and gaps.</p>
@@ -26,21 +26,21 @@ export function QuestionList({ questions, criteria, canGenerate, onGenerate }: P
     );
   }
   return (
-    <ol className="space-y-5">
+    <ol className="space-y-4">
       {questions.map((q) => (
-        <li key={q.id} className="grid grid-cols-[2rem_1fr] gap-x-2">
-          <span className="pt-0.5 text-sm tabular-nums text-muted-foreground">{q.position}.</span>
+        <li key={q.id} className="panel-soft grid grid-cols-[3.25rem_1fr] gap-x-3 px-5 py-4">
+          <span className="display text-[30px] leading-none text-muted-foreground">0{q.position}</span>
           <div>
-            <p className="text-[15px] font-medium leading-snug">{q.question}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{q.why_it_matters}</p>
-            <div className="mt-2.5 grid gap-3 text-sm sm:grid-cols-2">
-              <div className="border-l-2 pl-3" style={{ borderColor: "var(--diligence)" }}>
-                <div className="rail-label">Strong answer</div>
-                <p className="mt-0.5 leading-snug">{q.strong_answer}</p>
+            <h3 className="text-[17px] font-bold leading-snug">{q.question}</h3>
+            <p className="mt-1.5 text-sm"><span className="font-bold">Why it matters:</span> {q.why_it_matters}</p>
+            <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+              <div className="rounded-md px-3 py-2" style={{ background: "color-mix(in oklch, var(--diligence) 9%, white)" }}>
+                <div className="rail-label" style={{ color: "var(--diligence)" }}>Strong answer</div>
+                <p className="mt-1 leading-snug">{q.strong_answer}</p>
               </div>
-              <div className="border-l-2 pl-3" style={{ borderColor: "var(--pass)" }}>
-                <div className="rail-label">Weak answer</div>
-                <p className="mt-0.5 leading-snug">{q.weak_answer}</p>
+              <div className="rounded-md px-3 py-2" style={{ background: "color-mix(in oklch, var(--pass) 8%, white)" }}>
+                <div className="rail-label" style={{ color: "var(--pass)" }}>Weak answer</div>
+                <p className="mt-1 leading-snug">{q.weak_answer}</p>
               </div>
             </div>
             {q.basis && <p className="mt-2 text-xs text-muted-foreground">Targets: {labelFor(q.basis)}</p>}

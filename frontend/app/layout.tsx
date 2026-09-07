@@ -1,19 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { IBM_Plex_Sans, IBM_Plex_Serif } from "next/font/google";
+import { IBM_Plex_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
   variable: "--font-plex-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const plexSerif = IBM_Plex_Serif({
-  variable: "--font-plex-serif",
+const display = Playfair_Display({
+  variable: "--font-display",
   subsets: ["latin"],
-  weight: ["400", "500"],
-  style: ["normal", "italic"],
+  weight: ["500", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -23,21 +22,26 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexSerif.variable} h-full antialiased`}>
+    <html lang="en" className={`${plexSans.variable} ${display.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <header className="border-b border-border bg-paper">
-          <div className="mx-auto flex h-12 max-w-[1280px] items-center justify-between px-6">
-            <Link href="/" className="text-[15px] font-semibold tracking-tight">
-              Decision Cockpit
+        <header className="bg-forest text-paper" style={{ borderBottom: "3px solid var(--orange)" }}>
+          <div className="mx-auto flex h-16 max-w-[1320px] items-center justify-between px-8">
+            <Link href="/" className="flex items-center gap-3">
+              <span className="flex size-8 items-center justify-center border border-paper/40 text-[11px] font-bold tracking-wider">VC</span>
+              <span className="display text-[22px] font-bold">Decision Cockpit</span>
             </Link>
-            <nav className="flex items-center gap-6 text-sm text-muted-foreground">
-              <Link href="/" className="hover:text-foreground">Pipeline</Link>
-              <Link href="/thesis" className="hover:text-foreground">Thesis</Link>
+            <nav className="flex items-center gap-7 text-[12px] font-bold uppercase tracking-[0.14em] text-paper/80">
+              <Link href="/" className="hover:text-paper">Pipeline</Link>
+              <Link href="/thesis" className="hover:text-paper">Thesis</Link>
+              <span className="inline-flex items-center gap-2 text-paper/90">
+                <span className="size-2 rounded-full" style={{ background: "#4fd1a5" }} aria-hidden />
+                Evidence-first investing
+              </span>
             </nav>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-[1280px] flex-1 px-6 py-8">{children}</main>
-        <footer className="mx-auto w-full max-w-[1280px] px-6 pb-6 text-xs text-muted-foreground">
+        <main className="mx-auto w-full max-w-[1320px] flex-1 px-8 py-10">{children}</main>
+        <footer className="mx-auto w-full max-w-[1320px] px-8 pb-8 text-xs text-muted-foreground">
           AI recommends. The human decision is only ever changed by hand.
         </footer>
       </body>

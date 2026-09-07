@@ -42,62 +42,61 @@ export function ResearchPanel({ research, busy, onRun }: Props) {
 
   return (
     <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-forest px-4 py-2.5 text-paper">
+        <span className="text-[12px] font-bold uppercase tracking-[0.14em]">Brave search → OpenAI → cockpit</span>
+        <span className="text-xs opacity-80">No agent loop. Every fact cites a returned URL or is dropped.</span>
+      </div>
       <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <label htmlFor="research-brief" className="rail-label">What should the search cover?</label>
           <Textarea
             id="research-brief"
-            className="mt-1 min-h-[64px] bg-card"
+            className="mt-1 min-h-[72px] bg-card text-[15px]"
             placeholder={DEFAULT_BRIEF}
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
             disabled={busy}
           />
-          <p className="mt-1 text-xs text-muted-foreground">
-            Brave web search, read by the model. Every fact must cite a URL the search returned; anything else is dropped.
-            No agent run, no OpenClaw cost.
-          </p>
         </div>
-        <Button variant="outline" onClick={run} disabled={busy}>{shown ? "Research again" : "Research company"}</Button>
+        <Button className="h-10 px-5 font-bold" onClick={run} disabled={busy}>{shown ? "Run fresh research" : "Research company"}</Button>
       </div>
 
       {shown && (
-        <div className="border border-border bg-card">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-5 py-3 text-xs text-muted-foreground">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs text-muted-foreground">
             <span>
               {shown.result_count} results across {shown.domain_count} domains, {shown.facts_kept} facts kept
               {shown.facts_dropped > 0 ? `, ${shown.facts_dropped} dropped for citing a URL the search did not return` : ""}.
             </span>
             <span>{formatDate(shown.created_at)}</span>
           </div>
-          <div className="px-5 py-4">
-            <p className="text-sm leading-snug">{shown.summary}</p>
-            {shown.entity_note && <p className="mt-2 text-xs text-muted-foreground">{shown.entity_note}</p>}
+          <div className="grid gap-4 sm:grid-cols-[140px_1fr]">
+            <span className="eyebrow">Summary</span>
+            <p className="text-[16px] leading-relaxed">{shown.summary}</p>
           </div>
+          {shown.entity_note && <p className="text-xs text-muted-foreground">{shown.entity_note}</p>}
           {shown.facts.length > 0 && (
-            <ul className="divide-y divide-border border-t border-border">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {shown.facts.map((fact, i) => (
-                <li key={`${fact.source_url}-${i}`} className="grid gap-1 px-5 py-3 sm:grid-cols-[120px_1fr]">
-                  <div className="text-xs">
-                    <div>{titleCase(fact.category.toLowerCase())}</div>
-                    <div style={{ color: CONFIDENCE_STYLE[fact.confidence] }}>{fact.confidence.toLowerCase()} confidence</div>
+                <article key={`${fact.source_url}-${i}`} className="rounded-md border border-border bg-muted/40 px-4 py-3" style={{ borderTop: "3px solid var(--forest)" }}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[0.68rem] font-bold uppercase tracking-wider text-muted-foreground">{titleCase(fact.category.toLowerCase())}</span>
+                    <span className="text-[0.68rem] font-bold uppercase tracking-wider" style={{ color: CONFIDENCE_STYLE[fact.confidence] }}>{fact.confidence} confidence</span>
                   </div>
-                  <div className="text-sm leading-snug">
-                    {fact.finding}
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      <a href={fact.source_url} target="_blank" rel="noreferrer" className="underline underline-offset-2">{host(fact.source_url)}</a>
-                      {fact.publication_date ? `, ${fact.publication_date}` : ""}
-                      {fact.claim_id && fact.relation ? `, ${fact.relation.toLowerCase()} a deck claim` : ""}
-                    </div>
+                  <p className="mt-2 text-sm leading-snug">{fact.finding}</p>
+                  <div className="mt-2 text-xs">
+                    <a href={fact.source_url} target="_blank" rel="noreferrer" className="font-bold underline underline-offset-2">{fact.source_title || host(fact.source_url)} ↗</a>
+                    {fact.publication_date && <span className="ml-2 text-muted-foreground">{fact.publication_date}</span>}
+                    {fact.claim_id && fact.relation && <span className="ml-2 text-muted-foreground">{fact.relation.toLowerCase()} a deck claim</span>}
                   </div>
-                </li>
+                </article>
               ))}
-            </ul>
+            </div>
           )}
           {shown.unknowns.length > 0 && (
-            <div className="border-t border-border px-5 py-3">
-              <div className="rail-label">Still unknown</div>
-              <ul className="mt-1 list-disc pl-4 text-sm text-muted-foreground">
+            <div className="rounded-md px-4 py-3" style={{ background: "color-mix(in oklch, var(--watch) 12%, white)", border: "1px solid color-mix(in oklch, var(--watch) 40%, transparent)" }}>
+              <div className="rail-label" style={{ color: "var(--watch)" }}>Still unknown</div>
+              <ul className="mt-1 list-disc pl-4 text-sm">
                 {shown.unknowns.map((u) => <li key={u}>{u}</li>)}
               </ul>
             </div>

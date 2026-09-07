@@ -2,9 +2,9 @@ import type { Snapshot } from "@/lib/types";
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="border-t border-border py-2.5 first:border-t-0">
+    <div className="border-t border-border py-3 first:border-t-0 first:pt-0">
       <div className="rail-label">{label}</div>
-      <div className="mt-0.5 text-sm leading-snug">{value ?? <span className="text-muted-foreground">Not stated in deck</span>}</div>
+      <div className="mt-1 text-[15px] leading-snug">{value ?? <span className="text-muted-foreground">Not stated in deck</span>}</div>
     </div>
   );
 }
@@ -15,10 +15,10 @@ export function SnapshotRail({ snapshot }: { snapshot: Snapshot | null }) {
   }
   const founders = snapshot.founders.length
     ? snapshot.founders.map((f) => (
-        <div key={f.name} className="mb-1.5 last:mb-0">
-          <span className="font-medium">{f.name}</span>
+        <div key={f.name} className="mb-2 last:mb-0">
+          <span className="font-bold">{f.name}</span>
           {f.role && <span className="text-muted-foreground">, {f.role}</span>}
-          {f.domain_background && <div className="text-muted-foreground">{f.domain_background}</div>}
+          {f.domain_background && <div className="text-sm text-muted-foreground">{f.domain_background}</div>}
         </div>
       ))
     : null;
