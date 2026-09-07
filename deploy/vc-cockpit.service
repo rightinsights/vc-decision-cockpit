@@ -1,0 +1,25 @@
+# systemd unit: keeps the cockpit running on the OpenClaw box and restarts it on reboot.
+#
+#   sudo cp deploy/vc-cockpit.service /etc/systemd/system/vc-cockpit.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now vc-cockpit
+#   journalctl -u vc-cockpit -f
+#
+# Adjust User= and the two paths if the checkout is not ~/vc-decision-cockpit for that user.
+
+[Unit]
+Description=VC Decision Cockpit (FastAPI + Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/vc-decision-cockpit
+Environment=PORT=3000
+Environment=BACKEND_URL=http://127.0.0.1:8000
+ExecStart=/usr/bin/env bash /home/%i/vc-decision-cockpit/start.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

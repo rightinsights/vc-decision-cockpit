@@ -94,11 +94,12 @@ The agent needs web search to do real research. OpenClaw's managed `web_search` 
 
 The gateway binds to loopback by default and refuses an unauthenticated non-loopback bind. To reach it from this app:
 
+- on the gateway box itself (recommended): `OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789`, nothing to expose;
 - from a laptop: an SSH tunnel, `ssh -N -L 18789:127.0.0.1:18789 user@gateway-box`, then `OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789`;
 - from Replit: the gateway must be reachable over public HTTPS. The least-friction way for a demo window is a Cloudflare quick tunnel run **on the gateway box**, which connects to the loopback port locally so the gateway keeps its loopback bind and bearer-token auth:
 
   ```bash
-  # on the OpenClaw box (gateway-box)
+  # on the OpenClaw box
   curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared && chmod +x cloudflared
   ./cloudflared tunnel --url http://127.0.0.1:18789
   # prints a https://<random>.trycloudflare.com URL; it changes every time the tunnel restarts
@@ -108,7 +109,24 @@ The gateway binds to loopback by default and refuses an unauthenticated non-loop
 
 The app sends the agent the company name, website, current concern, open evidence gap, last review date, and the investment question (see `backend/app/prompts/agent_task.md`). The reply is parsed leniently (fenced JSON, bare JSON, or JSON inside prose) and stored as a `monitoring_event` with its source URL. The finding becomes an `AGENT` evidence row, the thesis is rescored, and the Decision Room shows before, new evidence, after. The human decision is never modified.
 
-## Deploy on Replit
+## Deploy on the OpenClaw box (recommended)
+
+Running the app on the same machine as the OpenClaw gateway removes the hardest part of any third-party host: the gateway stays loopback-only and the app reaches it at `http://127.0.0.1:18789`. SQLite and uploaded decks persist on disk. Tailscale Funnel gives a stable public HTTPS URL.
+
+```bash
+git clone https://github.com/rightinsights/vc-decision-cockpit.git ~/vc-decision-cockpit
+cd ~/vc-decision-cockpit
+cp .env.example .env
+# edit .env: OPENAI_API_KEY, BRAVE_API_KEY, OPENCLAW_GATEWAY_TOKEN, AGENT_PROVIDER=openclaw
+bash build.sh                     # installs backend deps, builds the frontend (Node 22+, Python 3.12)
+nohup bash start.sh > app.log 2>&1 &
+curl -s http://127.0.0.1:3000/api/health   # {"status":"ok"}
+tailscale funnel 3000             # prints https://<host>.<tailnet>.ts.net
+```
+
+To survive reboots, install `deploy/vc-cockpit.service` (see that file for the two commands).
+
+## Deploy on Replit (alternative)
 
 1. Push this repo to GitHub (done: `rightinsights/vc-decision-cockpit`, private).
 2. In Replit: Create App, Import from GitHub, authorise GitHub, pick the repo. `.replit` declares the Node and Python modules, a Reserved VM deployment target, `build.sh`, and `start.sh`. If the import wizard asks for a run command, keep `bash start.sh`.
