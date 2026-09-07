@@ -6,12 +6,15 @@ cd "$(dirname "$0")"
 export BACKEND_URL="${BACKEND_URL:-http://127.0.0.1:8000}"
 PORT="${PORT:-3000}"
 
-if [ ! -d frontend/.next ]; then
-  echo "frontend not built; running build.sh first"
+PY=backend/.venv/bin/python
+[ -x "$PY" ] || PY=backend/.venv/Scripts/python.exe
+if [ ! -x "$PY" ] || [ ! -d frontend/.next ]; then
+  echo "not built yet; running build.sh first"
   bash build.sh
 fi
+PY="$(cd "$(dirname "$PY")" && pwd)/$(basename "$PY")"
 
-(cd backend && exec python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000) &
+(cd backend && exec "$PY" -m uvicorn app.main:app --host 127.0.0.1 --port 8000) &
 BACK=$!
 (cd frontend && exec npx next start -p "$PORT" -H 0.0.0.0) &
 FRONT=$!
