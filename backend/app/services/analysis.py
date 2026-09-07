@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from sqlalchemy import select
@@ -105,10 +106,34 @@ def apply_extraction(company: Company, extraction: DeckExtraction) -> None:
     }
 
 
+_WORD = re.compile(r"[a-z0-9]{4,}")
+
+
+def match_claim_id(db: Session, company_id: str, text: str | None) -> str | None:
+    """Best-effort mapping of free text onto an existing claim by shared meaningful words."""
+    if not text:
+        return None
+    wanted = set(_WORD.findall(text.lower()))
+    best_id, best_hits = None, 1
+    for claim in company_claims(db, company_id):
+        hits = len(wanted & set(_WORD.findall(claim.claim_text.lower())))
+        if hits > best_hits:
+            best_id, best_hits = claim.id, hits
+    return best_id
+
+
 def replace_deck_claims(db: Session, company: Company, document: Document, extraction: DeckExtraction) -> list[Claim]:
-    """Re-analysis replaces deck-derived claims and their deck evidence; keeps agent/note evidence."""
+    """Re-analysis replaces deck-derived claims and their deck evidence; agent, web and note evidence survive and are re-linked."""
+    kept_evidence = list(db.execute(
+        select(Evidence).where(Evidence.company_id == company.id, Evidence.source_type != "DECK")
+    ).scalars().all())
+    old_claim_text: dict[str, str | None] = {}
+    for ev in kept_evidence:
+        old_claim_text[ev.id] = ev.claim.claim_text if ev.claim is not None else None
+        ev.claim = None  # detach through the relationship so the claim delete does not cascade to it
+    db.flush()
     for claim in company_claims(db, company.id):
-        db.delete(claim)  # cascades to its evidence rows
+        db.delete(claim)  # cascades only to the remaining DECK evidence rows
     db.flush()
     created: list[Claim] = []
     for item in extraction.claims:
@@ -130,6 +155,9 @@ def replace_deck_claims(db: Session, company: Company, document: Document, extra
                 relation="SUPPORTS", source_page=item.source_page, source_type="DECK", source_ref_id=document.id,
             ))
         created.append(claim)
+    db.flush()
+    for ev in kept_evidence:  # re-link: the old claim's wording first (re-extraction is near-identical), then the evidence text
+        ev.claim_id = match_claim_id(db, company.id, old_claim_text.get(ev.id)) or match_claim_id(db, company.id, ev.evidence_text)
     db.flush()
     return created
 

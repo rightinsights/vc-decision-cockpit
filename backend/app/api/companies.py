@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import shutil
 import uuid
 from pathlib import Path
 
@@ -56,6 +57,20 @@ def list_companies(db: Session = Depends(get_db)) -> list[PipelineRow]:
 @router.get("/companies/{company_id}", response_model=CompanyOut)
 def get_company_detail(company: Company = Depends(get_company)) -> Company:
     return company
+
+
+@router.delete("/companies/{company_id}", status_code=204)
+def delete_company(
+    company: Company = Depends(get_company),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> None:
+    """Hard delete: every row for the company (cascade) and its uploaded files."""
+    upload_dir = settings.resolved_upload_dir() / company.id
+    db.delete(company)
+    db.commit()
+    if upload_dir.exists():
+        shutil.rmtree(upload_dir, ignore_errors=True)
 
 
 @router.post("/companies/{company_id}/deck", response_model=DocumentOut, status_code=201)

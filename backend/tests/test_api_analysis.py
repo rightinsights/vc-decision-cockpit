@@ -1,7 +1,7 @@
 from app.llm_schemas import AssessmentOutput, DeckExtraction, QuestionSet
 from tests.conftest import (
     CANNED_SCORES, canned_assessment, canned_extraction, canned_questions,
-    create_company_with_deck, install_fake_llm,
+    create_company_with_deck, error_of, install_fake_llm,
 )
 
 
@@ -9,8 +9,8 @@ def test_analyze_requires_deck(client):
     install_fake_llm({})
     company = client.post("/companies", json={"name": "NoDeck"}).json()
     res = client.post(f"/companies/{company['id']}/analyze")
-    assert res.status_code == 400
-    assert "Upload a pitch deck" in res.json()["detail"]
+    status, detail = error_of(res)
+    assert status == 400 and "Upload a pitch deck" in detail
 
 
 def test_analyze_persists_snapshot_claims_evidence_and_python_scored_assessment(client, deck_pdf):
@@ -79,7 +79,7 @@ def test_llm_failure_returns_502_and_persists_nothing(client, deck_pdf):
     install_fake_llm({DeckExtraction: canned_extraction()})  # no AssessmentOutput -> FakeLLM raises
     company = create_company_with_deck(client, deck_pdf)
     res = client.post(f"/companies/{company['id']}/analyze")
-    assert res.status_code == 502
+    assert error_of(res)[0] == 502
     analysis = client.get(f"/companies/{company['id']}/analysis").json()
     assert analysis["assessment"] is None
     assert analysis["claims"] == []
@@ -89,7 +89,7 @@ def test_questions_require_analysis_first(client, deck_pdf):
     install_fake_llm({QuestionSet: canned_questions()})
     company = create_company_with_deck(client, deck_pdf)
     res = client.post(f"/companies/{company['id']}/meeting-questions")
-    assert res.status_code == 400
+    assert error_of(res)[0] == 400
 
 
 def test_exactly_five_questions_enforced_with_one_retry(client, deck_pdf):
@@ -100,8 +100,8 @@ def test_exactly_five_questions_enforced_with_one_retry(client, deck_pdf):
     company = create_company_with_deck(client, deck_pdf)
     client.post(f"/companies/{company['id']}/analyze")
     res = client.post(f"/companies/{company['id']}/meeting-questions")
-    assert res.status_code == 502
-    assert "exactly 5" in res.json()["detail"]
+    status, detail = error_of(res)
+    assert status == 502 and "exactly 5" in detail
     retry_call = [v for name, v in fake.calls if name == "questions"][1]
     assert "previous response contained 4" in retry_call["feedback"]
 

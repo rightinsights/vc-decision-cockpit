@@ -6,7 +6,7 @@ import pytest
 from app.agents.base import AgentError, AgentRequest, parse_finding
 from app.agents.openclaw import OpenClawMonitoringAgent
 from app.llm_schemas import AssessmentOutput, DeckExtraction
-from tests.conftest import CANNED_SCORES, canned_assessment, canned_extraction, create_company_with_deck, install_fake_llm
+from tests.conftest import CANNED_SCORES, canned_assessment, canned_extraction, create_company_with_deck, error_of, install_fake_llm
 
 
 def _after_scores():
@@ -19,13 +19,13 @@ def test_agent_check_requires_watch_or_diligence(client, deck_pdf):
     install_fake_llm({DeckExtraction: canned_extraction(), AssessmentOutput: canned_assessment()})
     company = create_company_with_deck(client, deck_pdf)
     cid = company["id"]
-    assert client.post(f"/companies/{cid}/agent-check", json={}).status_code == 400  # no analysis
+    assert error_of(client.post(f"/companies/{cid}/agent-check", json={}))[0] == 400  # no analysis
     client.post(f"/companies/{cid}/analyze")
-    assert client.post(f"/companies/{cid}/agent-check", json={}).status_code == 400  # no decision
+    assert error_of(client.post(f"/companies/{cid}/agent-check", json={}))[0] == 400  # no decision
     client.post(f"/companies/{cid}/decisions", json={"decision": "PASS", "rationale": "out of scope"})
     res = client.post(f"/companies/{cid}/agent-check", json={})
-    assert res.status_code == 400
-    assert "WATCH or DILIGENCE" in res.json()["detail"]
+    status, detail = error_of(res)
+    assert status == 400 and "WATCH or DILIGENCE" in detail
 
 
 def test_mock_agent_check_creates_event_evidence_and_reassessment(client, deck_pdf):

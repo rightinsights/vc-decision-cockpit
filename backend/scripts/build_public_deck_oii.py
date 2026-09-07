@@ -1,9 +1,16 @@
 """
-Rebuild the Oii.ai seed deck (published by TechCrunch with the company's consent, June 2023) as a
-text-searchable PDF: download each public slide image, transcribe it with the vision model, and
-write one page per slide holding the image plus its transcription. Provenance is printed on every page.
+Rebuild the Oii.ai seed deck as a text-searchable PDF from the 7 of 21 slides that TechCrunch
+published with the company's consent (June 2023). Each public slide image is downloaded,
+transcribed with the vision model (cached), and written as one page holding the image plus its
+transcription. Provenance lives in PDF metadata and on a final notes page, never in slide text,
+so the extractor does not read it as a founder claim.
+
+    cd backend && .venv/bin/python -m scripts.build_public_deck_oii
 """
+from __future__ import annotations
+
 import base64
+import json
 import sys
 import time
 from pathlib import Path
@@ -16,16 +23,18 @@ from app.config import get_settings
 
 SRC = "https://techcrunch.com/2023/06/02/sample-seed-pitch-deck-oii-ai/"
 BASE = "https://techcrunch.com/wp-content/uploads/2023/05/OII-AIPitchDeckTeardownTechCrunchslide-{}.jpg"
-OUT_DIR = Path(__file__).parent / "decks" / "oii"
+DATA = Path(__file__).resolve().parents[1] / "data" / "demo"
+OUT_DIR = DATA / "oii-slides"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-PDF_PATH = Path(__file__).parent / "decks" / "oii-ai-seed-deck-2023-techcrunch.pdf"
+PDF_PATH = DATA / "oii-ai-seed-deck-2023-techcrunch.pdf"
+CACHE = OUT_DIR / "transcripts.json"
 HEADERS = {"User-Agent": "Mozilla/5.0 (research; one-off download of publicly posted slides)"}
 
 settings = get_settings()
 client = OpenAI(api_key=settings.openai_api_key)
 model = settings.openai_model
 
-# 1. download
+# 1. download the slides TechCrunch hosts (only some of the 21 exist at this pattern)
 names = ["COVER"] + [f"{i:04d}" for i in range(1, 31)]
 slides: list[tuple[str, Path]] = []
 with httpx.Client(headers=HEADERS, timeout=30, follow_redirects=True) as http:
@@ -40,9 +49,9 @@ with httpx.Client(headers=HEADERS, timeout=30, follow_redirects=True) as http:
 print("slides found:", [n for n, _ in slides])
 if len(slides) < 5:
     sys.exit("too few slides; check the URL pattern")
-# TechCrunch published 7 of the 21 slides with the company's consent; the rest are view-only on Drive.
 
-# 2. transcribe
+# 2. transcribe (cached so rebuilding the PDF costs nothing)
+cached: dict[str, str] = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
 PROMPT = (
     "Transcribe every piece of text on this pitch-deck slide verbatim, keeping the reading order and "
     "line structure. For charts, diagrams, logos, or tables, add a short bracketed description such as "
@@ -51,6 +60,10 @@ PROMPT = (
 )
 transcripts: list[tuple[str, str]] = []
 for name, path in slides:
+    if name in cached:
+        transcripts.append((name, cached[name]))
+        print(f"{name}: cached, {len(cached[name])} chars")
+        continue
     data = base64.b64encode(path.read_bytes()).decode()
     t0 = time.perf_counter()
     resp = client.chat.completions.create(
@@ -62,19 +75,29 @@ for name, path in slides:
     )
     text = (resp.choices[0].message.content or "").strip()
     transcripts.append((name, text))
+    cached[name] = text
+    CACHE.write_text(json.dumps(cached, indent=1, ensure_ascii=False), encoding="utf-8")
     print(f"{name}: {len(text)} chars, {int((time.perf_counter()-t0)*1000)} ms, tokens={resp.usage.total_tokens if resp.usage else '?'}")
 
-# 3. build PDF: image on top, transcription below, provenance footer
+# 3. build the PDF: image on top, transcription below; provenance in metadata and a final notes page
 doc = pymupdf.open()
 W, H = 612, 792
-for idx, ((name, path), (_, text)) in enumerate(zip(slides, transcripts), start=1):
+for (name, path), (_, text) in zip(slides, transcripts):
     page = doc.new_page(width=W, height=H)
-    label = "cover" if name == "COVER" else f"original slide {int(name)}"
-    page.insert_text((36, 30), f"Oii.ai seed deck (2023), {label}; {len(slides)} of 21 slides were published by TechCrunch with the company's consent. Source: {SRC}", fontsize=6.5, color=(0.4, 0.4, 0.4))
     img_rect = pymupdf.Rect(36, 40, W - 36, 40 + (W - 72) * 9 / 16)
     page.insert_image(img_rect, filename=str(path))
     text_rect = pymupdf.Rect(36, img_rect.y1 + 12, W - 36, H - 36)
     page.insert_textbox(text_rect, text or "[no text]", fontsize=8.5, fontname="helv", lineheight=1.25)
+notes = doc.new_page(width=W, height=H)
+notes.insert_textbox(
+    pymupdf.Rect(36, 36, W - 36, H - 36),
+    "Provenance note (not part of the company's deck): the preceding pages reproduce the "
+    f"{len(slides)} of 21 slides of Oii.ai's 2023 seed deck that TechCrunch published with the company's "
+    f"consent at {SRC}. Slide text was transcribed from the published images. The remaining slides are "
+    "not public and are not included.",
+    fontsize=9, fontname="helv", lineheight=1.3,
+)
+doc.set_metadata({"title": "Oii.ai seed deck (2023), public slides via TechCrunch", "subject": SRC, "producer": "build_public_deck_oii.py"})
 doc.save(str(PDF_PATH))
 doc.close()
 

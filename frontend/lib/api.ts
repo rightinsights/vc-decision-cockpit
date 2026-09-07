@@ -30,7 +30,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(res.status, detail);
   }
-  return res.json() as Promise<T>;
+  const body = await res.json();
+  // Long-running endpoints stream keepalive bytes and then either the result or {detail, status}.
+  if (body && typeof body === "object" && !Array.isArray(body) && "detail" in body && Object.keys(body).length <= 2) {
+    throw new ApiError(Number(body.status) || 500, String(body.detail));
+  }
+  return body as T;
 }
 
 const json = (body: unknown): RequestInit => ({
@@ -44,6 +49,9 @@ export const api = {
   createCompany: (body: { name: string; website?: string; stage?: string; geography?: string }) =>
     request<Company>("/companies", json(body)),
   getAnalysis: (id: string) => request<Analysis>(`/companies/${id}/analysis`),
+  deleteCompany: (id: string) => fetch(`${BASE}/companies/${id}`, { method: "DELETE" }).then((r) => {
+    if (!r.ok) throw new ApiError(r.status, "Could not delete the company.");
+  }),
   uploadDeck: (id: string, file: File) => {
     const form = new FormData();
     form.append("file", file);

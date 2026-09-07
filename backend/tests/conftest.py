@@ -102,6 +102,17 @@ def canned_questions(count: int = 5) -> QuestionSet:
     ])
 
 
+def error_of(res) -> tuple[int, str]:
+    """Status and detail for both plain HTTP errors and errors streamed inside a 200 body."""
+    try:
+        body = res.json()
+    except ValueError:
+        return res.status_code, res.text
+    if res.status_code == 200 and isinstance(body, dict) and "detail" in body:
+        return int(body.get("status", 500)), str(body["detail"])
+    return res.status_code, str(body.get("detail", "")) if isinstance(body, dict) else ""
+
+
 def install_fake_llm(responses: dict) -> FakeLLM:
     fake = FakeLLM(responses)
     app.dependency_overrides[get_llm] = lambda: fake

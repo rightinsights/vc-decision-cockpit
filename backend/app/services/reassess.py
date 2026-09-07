@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any
 from urllib.parse import urlparse
 
@@ -14,22 +13,11 @@ from ..models import Assessment, Company, Decision, Evidence, FounderNote, Monit
 from ..schemas import AssessmentOut, DecisionOut, EvidenceOut, MonitoringEventOut, ReassessmentOut, RecommendationChange
 from ..scoring import diff_scores
 from ..thesis import LABELS
-from .analysis import AnalysisError, claims_block, company_claims, latest_assessment, latest_decision, run_assessment, snapshot_json
+from .analysis import (
+    AnalysisError, claims_block, company_claims, latest_assessment, latest_decision, match_claim_id, run_assessment, snapshot_json,
+)
 
-_WORD = re.compile(r"[a-z0-9]{4,}")
-
-
-def match_claim_id(db: Session, company_id: str, text: str | None) -> str | None:
-    """Best-effort mapping of free text onto an existing claim by shared meaningful words."""
-    if not text:
-        return None
-    wanted = set(_WORD.findall(text.lower()))
-    best_id, best_hits = None, 1
-    for claim in company_claims(db, company_id):
-        hits = len(wanted & set(_WORD.findall(claim.claim_text.lower())))
-        if hits > best_hits:
-            best_id, best_hits = claim.id, hits
-    return best_id
+__all__ = ["match_claim_id", "analyze_founder_note", "build_reassessment", "explain"]
 
 
 def _host(url: str | None) -> str:

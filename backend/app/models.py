@@ -80,7 +80,8 @@ class Claim(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     company: Mapped[Company] = relationship(back_populates="claims")
-    evidence: Mapped[list[Evidence]] = relationship(back_populates="claim", cascade="all, delete-orphan")
+    # No delete-orphan: evidence may legitimately exist without a claim (web, agent, founder notes).
+    evidence: Mapped[list[Evidence]] = relationship(back_populates="claim", cascade="all")
 
 
 class Evidence(Base):

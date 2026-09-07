@@ -6,7 +6,7 @@ import pytest
 from app.llm_schemas import AssessmentOutput, DeckExtraction, ResearchFactOut, ResearchReport
 from app.services.brave import BraveClient, ResearchError, build_queries, gather_results, get_brave
 from app.main import app
-from tests.conftest import CANNED_SCORES, canned_assessment, canned_extraction, create_company_with_deck, install_fake_llm
+from tests.conftest import CANNED_SCORES, canned_assessment, canned_extraction, create_company_with_deck, error_of, install_fake_llm
 
 RESULTS = {
     "web": {"results": [
@@ -156,7 +156,8 @@ def test_research_reports_search_and_key_failures(client):
     transport, _ = brave_transport(status=401, body={})
     install_brave(BraveClient("brave-key", transport=transport))
     res = client.post(f"/companies/{company['id']}/research", json={})
-    assert res.status_code == 502 and "401" in res.json()["detail"]
+    status, detail = error_of(res)
+    assert status == 502 and "401" in detail
 
     app.dependency_overrides.pop(get_brave, None)  # real dependency, no key configured in tests
     res = client.post(f"/companies/{company['id']}/research", json={})

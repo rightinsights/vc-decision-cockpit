@@ -61,7 +61,14 @@ export default function DecisionRoomPage() {
       setHistory(h);
       return value;
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong.");
+      setError(err instanceof ApiError ? err.message : "The connection dropped before the reply arrived. The work may still have completed; the page has been refreshed.");
+      try {
+        const [a, h] = await fetchAll();  // the server may have finished even if the reply was lost
+        setAnalysis(a);
+        setHistory(h);
+      } catch {
+        /* keep the original error */
+      }
       return null;
     } finally {
       setBusy(null);
