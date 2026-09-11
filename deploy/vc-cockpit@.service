@@ -1,0 +1,37 @@
+# systemd template unit: keeps the cockpit running and brings it back after a crash or reboot.
+#
+# This is a TEMPLATE unit (note the @ in the filename), so %i resolves to the instance
+# name you enable it with. Enable it with your own username as the instance:
+#
+#   sudo cp deploy/vc-cockpit@.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now vc-cockpit@$USER
+#   systemctl status vc-cockpit@$USER
+#   journalctl -u vc-cockpit@$USER -f
+#
+# Assumes the checkout is at /home/<user>/vc-decision-cockpit. Adjust WorkingDirectory
+# and ExecStart if it lives elsewhere.
+
+[Unit]
+Description=VC Decision Cockpit (FastAPI + Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/vc-decision-cockpit
+Environment=PORT=3000
+Environment=BACKEND_URL=http://127.0.0.1:8000
+ExecStart=/usr/bin/env bash /home/%i/vc-decision-cockpit/start.sh
+
+# start.sh exits as soon as either half dies, so "always" is what makes this self-healing.
+# on-failure would leave the app down whenever a child exited with status 0.
+Restart=always
+RestartSec=5
+
+# Never give up after repeated fast restarts; a demo box should keep trying.
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

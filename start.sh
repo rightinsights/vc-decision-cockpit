@@ -6,6 +6,18 @@ cd "$(dirname "$0")"
 export BACKEND_URL="${BACKEND_URL:-http://127.0.0.1:8000}"
 PORT="${PORT:-3000}"
 
+# systemd hands over a minimal PATH, so a node installed via nvm or into a home
+# directory is invisible here even though an interactive shell finds it.
+if ! command -v npx >/dev/null 2>&1; then
+  for nvm_sh in "${NVM_DIR:-$HOME/.nvm}/nvm.sh" /usr/local/nvm/nvm.sh; do
+    if [ -s "$nvm_sh" ]; then . "$nvm_sh" >/dev/null 2>&1 && break; fi
+  done
+fi
+if ! command -v npx >/dev/null 2>&1; then
+  echo "npx not found on PATH. Add its directory to the service unit as Environment=PATH=..." >&2
+  exit 1
+fi
+
 PY=backend/.venv/bin/python
 [ -x "$PY" ] || PY=backend/.venv/Scripts/python.exe
 if [ ! -x "$PY" ] || [ ! -d frontend/.next ]; then
